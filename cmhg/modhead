@@ -64,6 +64,8 @@ error-identifiers: err_BadName("BadName:Bad system variable name"),
                    err_BadLength("BadLength:Bad system variable length"),
                    err_BadType("BadType:Bad system variable type"),
                    err_NoMemory("NoMemory:Not enough memory for system variable"),
+                   err_NoSuchVariable("NoSuchVariable:System variable not found"),
+                   err_BufferOverflow("BufferOverflow:Buffer overflow"),
                    err_InternalError("InternalError:SysVar: Internal consistency fault")
 
 ; When the module is initialised, this routine will be entered. You should

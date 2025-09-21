@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "kernel.h"
 #include "modhead.h"
@@ -80,6 +81,41 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
             R3 = new context pointer (null-terminated)
             R4 = variable type
      */
+    csstring_t cs = (csstring_t)r->r[0];
+    uint8_t *data = (uint8_t*)r->r[1];
+    uint32_t datalen = (uint32_t)r->r[2];
+    void *context = (void *)r->r[3];
+    sysvartype_t type; /* How to extract */
+    sysvar_t *var;
+
+    var = sysvar_read(cs, context);
+    if (var == NULL)
+    {
+        r->r[2] = 0;
+        return err_NoSuchVariable;
+    }
+
+    if (datalen & (1u<<31))
+    {
+        /* Check for existance - documented in PRM*/
+        r->r[2] = ~var->value.datalen;
+        return err_BufferOverflow;
+    }
+    if (datalen < var->value.datalen)
+    {
+        /* Not enough memory for the string */
+        r->r[2] = ~var->value.datalen;
+        return err_BufferOverflow;
+    }
+
+    /* FIXME: No conversion from the variable type */
+    /* FIXME: No code variables */
+
+    memcpy(data, var->value.data, var->value.datalen);
+    r->r[2] = var->value.datalen;
+    r->r[3] = (int)var->name;
+    r->r[4] = var->type;
+
     return NULL;
 }
 
@@ -104,6 +140,9 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     void *context = (void *)r->r[3];
     sysvartype_t type; /* How to extract */
     sysvarerror_t err;
+
+    /* FIXME: No conversion of the data type */
+    /* FIXME: No code variables */
 
     err = sysvar_create(cs, data, datalen, type);
     switch (err)
