@@ -15,6 +15,7 @@ jobs:
     env:
       "Sys$Environment": ROBuild
       "BUILD32": 1
+      "Alias$amu": "hostamu %*0"
 
     # Directory to change to before running script
     #dir: <working directory>
@@ -22,7 +23,16 @@ jobs:
     # Commands which should be executed to perform the build.
     # The build will terminate if any command returns a non-0 return code or an error.
     script:
-      - hostamu -f Makefile ram  
+      - echo *** Build the test ***
+      - amu -f Makefile
+      - echo *** Run the test ***
+      - /aif32.Varstest
+
+      - echo
+      - echo *** Build the module ***
+      - amu -f MakefileModule ram
+      - echo
+      - echo *** SUCCESS ***
 
     # Outputs from the build are defined in artifacts
     # These are a list of artifacts to report directories or files.

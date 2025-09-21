@@ -1,0 +1,32 @@
+/*******************************************************************
+ * File:        csstring
+ * Purpose:     Control/space terminated string processing
+ * Author:      Gerph
+ * Date:        21 Sep 2025
+ ******************************************************************/
+
+#ifndef CSSTRING_H
+#define CSSTRING_H
+
+typedef char *csstring_t;       /* Control/Space terminated string */
+
+/*************************************************** Gerph *********
+ Function:      csstrlen
+ Description:   Get the length of a control/space terminated string
+ Parameters:    cs-> the string to get length of
+ Returns:       length in bytes
+ ******************************************************************/
+int csstrlen(csstring_t cs);
+
+
+/*************************************************** Gerph *********
+ Function:      csstrdup
+ Description:   Duplicate a control terminated string into a 0-terminated string
+ Parameters:    cs-> the string to copy
+ Returns:       new string pointer, or NULL if failed
+ ******************************************************************/
+char *csstrdup(csstring_t cs);
+
+
+#endif
+

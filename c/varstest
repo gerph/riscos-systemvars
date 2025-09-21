@@ -1,0 +1,36 @@
+/*******************************************************************
+ * File:        varstest
+ * Purpose:     Very simple test that the variables can register
+ * Author:      Gerph
+ * Date:        21 Sep 2025
+ ******************************************************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "variables.h"
+
+#define SYSVALUE(str) (uint8_t*)(str), strlen((str))
+
+int main(int argc, char *argv[])
+{
+#define ADDVARIABLE(name, value) \
+        do { \
+            err = sysvar_create((name), SYSVALUE((value)), svt_string); \
+            if (err) \
+            { \
+                printf("Failed to create variable '%s': err=%i\n", (name), (err)); \
+                exit(1); \
+            } \
+        } while (0)
+
+    sysvarerror_t err;
+    ADDVARIABLE("Sys$Name", "TestSystem");
+    ADDVARIABLE("My$Var", "Whee!");
+    ADDVARIABLE("OS$Version", "0.01");
+    ADDVARIABLE("Zoom", "Yes");
+    ADDVARIABLE("Aardvark", "Anteater");
+
+    sysvars_dump();
+}

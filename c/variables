@@ -1,0 +1,157 @@
+/*******************************************************************
+ * File:        variables
+ * Purpose:     Management of variables
+ * Author:      Gerph
+ * Date:        21 Sep 2025
+ ******************************************************************/
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "csstring.h"
+#include "variables.h"
+
+
+/* Define this to debug this file */
+#define DEBUG
+
+
+#ifdef DEBUG
+#define dprintf if (1) printf
+#else
+#define dprintf if (0) printf
+#endif
+
+
+/* List of all the variables - in alphabetical order */
+sysvar_t *sysvars;
+
+/*************************************************** Gerph *********
+ Function:      sysvar_matchname
+ Description:   Perform a comparison on the names supplied
+ Parameters:    cs1-> first cs string
+                cs2-> second cs string
+ Returns:       0 if matches
+                -ve if cs1 is < cs2
+                +ve if cs1 is > cs2
+ ******************************************************************/
+int sysvar_matchname(csstring_t cs1, csstring_t cs2)
+{
+    while (*cs1 > ' ' || *cs2 > ' ')
+    {
+        char c1 = *cs1++;
+        char c2 = *cs2++;
+        if (c1==c2)
+            continue;
+
+        /* FIXME: Maybe make this use the locale to be correct */
+        if (c1>='A' && c1<='Z')
+            c1 |= 32; /* Case insensitive ascii */
+        if (c2>='A' && c2<='Z')
+            c2 |= 32; /* Case insensitive ascii */
+        if (c1 != c2)
+            return c1 - c2;
+    }
+    return 0;
+}
+
+
+
+/*************************************************** Gerph *********
+ Function:      sysvar_create
+ Description:   Create a new system variable
+ Parameters:    var-> variable name (ctrlspc-terminated)
+                data-> value of the variable
+                datalen = the length of the variable
+                type = type of the variable
+ Returns:       error code
+ ******************************************************************/
+sysvarerror_t sysvar_create(csstring_t   cs,
+                            uint8_t     *data,
+                            uint32_t     datalen,
+                            sysvartype_t type)
+{
+    sysvar_t *sysvar;
+    uint8_t *newdata;
+
+    /* FIXME: Check the variable name */
+    /* FIXME: Check value memory exists? */
+    /* FIXME: Check value length - do we want to restrict the length? */
+    /* FIXME: Check the type is acceptable */
+
+    sysvar = malloc(sizeof(*sysvar));
+    if (sysvar==NULL)
+        goto no_memory_0;
+
+    sysvar->name = csstrdup(cs);
+    if (sysvar->name == NULL)
+        goto no_memory_1;
+
+    newdata = malloc(datalen);
+    if (newdata == NULL)
+        goto no_memory_2;
+
+    memcpy(newdata, data, datalen);
+
+    sysvar->value.data = newdata;
+    sysvar->value.datalen = datalen;
+    sysvar->type = type;
+
+    /* Link to the list */
+    {
+        sysvar_t *last = NULL;
+        sysvar_t *cur;
+        for (cur=sysvars; cur; last=cur, cur=cur->next)
+        {
+            int match = sysvar_matchname(cur->name, cs);
+            if (match == 0)
+            {
+                /* The variable already exists - we should be updating */
+                /* FIXME: Decide how to handle this */
+                break;
+            }
+            if (match > 0)
+            {
+                /* We have found the insertion point - exit */
+                break;
+            }
+        }
+
+        /* last -> the last entry (or NULL); cur -> the next entry */
+        sysvar->next = cur;
+        if (last == NULL)
+            sysvars = sysvar; /* This was the head of the list */
+        else
+            last->next = sysvar;
+    }
+
+    return sve_ok;
+
+
+no_memory_2:
+    free(sysvar->name);
+no_memory_1:
+    free(sysvar);
+no_memory_0:
+    return sve_nomemory;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      sysvars_dump
+ Description:   Produce a list of all the system variables that we know
+ Parameters:    none
+ Returns:       none
+ ******************************************************************/
+void sysvars_dump(void)
+{
+    sysvar_t *cur;
+    for (cur=sysvars; cur; cur=cur->next)
+    {
+        printf("Variable %-20s : type=%-2i, length=%-3i : value : %.*s\n",
+               cur->name, cur->type, cur->value.datalen, cur->value.datalen, cur->value.data);
+    }
+}

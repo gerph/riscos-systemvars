@@ -1,0 +1,83 @@
+/*******************************************************************
+ * File:        variables
+ * Purpose:     Management of variables
+ * Author:      Gerph
+ * Date:        21 Sep 2025
+ ******************************************************************/
+
+#ifndef VARIABLES_H
+#define VARIABLES_H
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "csstring.h"
+
+typedef struct sysvarvalue_s {
+    uint8_t     *data;
+    uint32_t     datalen;
+} sysvarvalue_t;
+
+typedef enum sysvartype_e {
+    svt_string = 0,
+    svt_natural = 0,
+    svt_number = 1,
+    svt_macro = 2,
+    svt_expanded = 3,
+    svt_literal = 4,
+    svt_code = 16
+} sysvartype_t;
+
+typedef struct sysvar_s sysvar_t;
+struct sysvar_s {
+    sysvar_t        *next;
+    char            *name;
+    sysvarvalue_t    value;
+    sysvartype_t     type;
+};
+
+typedef enum sysvarerror_e {
+    sve_ok = 0,
+    sve_badname,
+    sve_badlength,
+    sve_nomemory,
+    sve_badtype
+} sysvarerror_t;
+
+
+/*************************************************** Gerph *********
+ Function:      sysvar_matchname
+ Description:   Perform a comparison on the names supplied
+ Parameters:    cs1-> first cs string
+                cs2-> second cs string
+ Returns:       0 if matches
+                -ve if cs1 is < cs2
+                +ve if cs1 is > cs2
+ ******************************************************************/
+int sysvar_matchname(csstring_t cs1, csstring_t cs2);
+
+
+/*************************************************** Gerph *********
+ Function:      sysvar_create
+ Description:   Create a new system variable
+ Parameters:    var-> variable name (ctrlspc-terminated)
+                data-> value of the variable
+                datalen = the length of the variable
+                type = type of the variable
+ Returns:       error code
+ ******************************************************************/
+sysvarerror_t sysvar_create(csstring_t   cs,
+                            uint8_t     *data,
+                            uint32_t     datalen,
+                            sysvartype_t type);
+
+/*************************************************** Gerph *********
+ Function:      sysvars_dump
+ Description:   Produce a list of all the system variables that we know
+ Parameters:    none
+ Returns:       none
+ ******************************************************************/
+void sysvars_dump(void);
+
+
+#endif
