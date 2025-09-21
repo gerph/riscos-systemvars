@@ -22,7 +22,7 @@ jobs:
     # Commands which should be executed to perform the build.
     # The build will terminate if any command returns a non-0 return code or an error.
     script:
-      - amu -f Makefile ram  
+      - hostamu -f Makefile ram  
 
     # Outputs from the build are defined in artifacts
     # These are a list of artifacts to report directories or files.
