@@ -13,19 +13,24 @@
 
 #define SYSVALUE(str) (uint8_t*)(str), strlen((str))
 
-int main(int argc, char *argv[])
+#define START_TEST(name) printf("\n\n*** Test: %s ***\n\n", name)
+
+bool test_creation(void)
 {
+    bool success = true;
+    sysvarerror_t err;
+    START_TEST("Variable creation");
+
 #define ADDVARIABLE(name, value) \
         do { \
             err = sysvar_create((name), SYSVALUE((value)), svt_string); \
             if (err) \
             { \
                 printf("Failed to create variable '%s': err=%i\n", (name), (err)); \
-                exit(1); \
+                success = false; \
             } \
         } while (0)
 
-    sysvarerror_t err;
     ADDVARIABLE("Sys$Name", "TestSystem");
     ADDVARIABLE("My$Var", "Whee!");
     ADDVARIABLE("OS$Version", "0.01");
@@ -33,4 +38,65 @@ int main(int argc, char *argv[])
     ADDVARIABLE("Aardvark", "Anteater");
 
     sysvars_dump();
+    return success;
+}
+
+
+bool test_reading(void)
+{
+    bool success = true;
+    START_TEST("Variable reading");
+
+#define CHECKREAD(varname, expected) \
+        do { \
+            sysvar_t *var; \
+            printf("Reading %-20s : ", varname); \
+            var = sysvar_read((varname), NULL); \
+            if (var == NULL && (expected) == NULL) \
+            { \
+                printf("OK (non-existant)\n"); \
+            } \
+            else if (var == NULL) \
+            { \
+                printf("FAIL (should have found '%s' but could not find)\n", (expected)); \
+                success = false; \
+            } \
+            else if ((expected) == NULL) \
+            { \
+                printf("FAIL (should have not found anything but found variable '%s')\n", var->name); \
+                success = false; \
+            } \
+            else if (var->value.datalen == strlen((expected)) && \
+                     memcmp(var->value.data, (expected), var->value.datalen) == 0) \
+            { \
+                printf("OK (got expected)\n"); \
+            } \
+            else \
+            { \
+                printf("FAIL (got '%.*s', but expected '%s'))\n", var->value.datalen, var->value.data, expected); \
+                success = false; \
+            } \
+        } while (0)
+
+    CHECKREAD("Sys$Name", "TestSystem");
+    CHECKREAD("AARDVARK", "Anteater");
+    CHECKREAD("Sys$Names", NULL);
+    CHECKREAD("Sys$Nam", NULL);
+    CHECKREAD("Bob", NULL);
+    return success;
+}
+
+int main(int argc, char *argv[])
+{
+    bool success = true;
+    success = test_creation() & success;
+    success = test_reading() & success;
+
+    printf("\n\n");
+    if (success)
+        printf("All tests passed\n");
+    else
+        printf("Some tests failed\n");
+
+    exit(success ? 0 : 1);
 }

@@ -63,7 +63,7 @@ int sysvar_matchname(csstring_t cs1, csstring_t cs2)
 /*************************************************** Gerph *********
  Function:      sysvar_create
  Description:   Create a new system variable
- Parameters:    var-> variable name (ctrlspc-terminated)
+ Parameters:    cs-> variable name (ctrlspc-terminated)
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
@@ -137,6 +137,28 @@ no_memory_1:
     free(sysvar);
 no_memory_0:
     return sve_nomemory;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      sysvar_read
+ Description:   Retrieve a system variable by name, which might be wildcarded
+ Parameters:    var-> variable name (ctrlspc-terminated, may be wildcard)
+                context-> last variable name returned, or NULL to start enumeration
+ Returns:       pointer to the variable, or NULL if not found
+ ******************************************************************/
+sysvar_t *sysvar_read(csstring_t   cs,
+                      char        *context)
+{
+    sysvar_t *cur;
+    for (cur=sysvars; cur; cur=cur->next)
+    {
+        /* FIXME: I'm ignoring wildcards right now */
+        int match = sysvar_matchname(cur->name, cs);
+        if (match == 0)
+            return cur;
+    }
+    return NULL;
 }
 
 

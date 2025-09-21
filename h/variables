@@ -71,6 +71,17 @@ sysvarerror_t sysvar_create(csstring_t   cs,
                             uint32_t     datalen,
                             sysvartype_t type);
 
+
+/*************************************************** Gerph *********
+ Function:      sysvar_read
+ Description:   Retrieve a system variable by name, which might be wildcarded
+ Parameters:    var-> variable name (ctrlspc-terminated, may be wildcard)
+                context-> last variable name returned, or NULL to start enumeration
+ Returns:       pointer to the variable, or NULL if not found
+ ******************************************************************/
+sysvar_t *sysvar_read(csstring_t   cs,
+                      char        *context);
+
 /*************************************************** Gerph *********
  Function:      sysvars_dump
  Description:   Produce a list of all the system variables that we know
