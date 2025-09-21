@@ -10,6 +10,8 @@
 #include "kernel.h"
 #include "modhead.h"
 
+#include "variables.h"
+
 
 /***************************************************************************
  * Function:     Mod_Init
@@ -45,5 +47,85 @@ _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
 _kernel_oserror *Mod_Final(int fatal, int podule_base, void *pw)
 {
     printf("Module SystemVars dying\n");
+    sysvars_dump();
+    return NULL;
+}
+
+/***************************************************************************
+ * Description:  SWI handler routine. All SWIs for this module will be
+ *               passed to these routines.
+ * Parameters:   number = SWI number within SWI chunk (i.e. 0 to 63)
+ *               r      = pointer to register block on entry
+ *               pw     = private word for module
+ * On exit:      Return NULL if SWI handled sucessfully, setting return
+ *               register values (r0-r9) in r.
+ *               Return error_BAD_SWI for out of range SWIs.
+ *               Return an error block for a custom error.
+ **************************************************************************/
+/* Functions called to handle particular SWI calls */
+_kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
+{
+    /*
+        Read a variable value
+
+        =>  R0 = pointer to variable name, which may be wildcarded (using '*' and '#')
+            R1 = pointer to buffer to hold variable value
+            R2 = maximum length of buffer, or bit 31 set to check existence/length of variable
+            R3 = context pointer (used with wildcarded names), or 0 for first call
+            R4 = 3 if an expanded string is to be converted on return
+
+        <=  R0 preserved; or corrupted if R2 bit 31 was set on entry
+            R1 preserved
+            R2 = number of bytes read
+            R3 = new context pointer (null-terminated)
+            R4 = variable type
+     */
+    return NULL;
+}
+
+_kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
+{
+    /*
+        Write a variable value
+
+        =>  R0 = pointer to variable name, which may be wildcarded (* and #) if updating/deleting
+            R1 = pointer to variable value
+            R2 = length of value, or negative to delete the variable
+            R3 = context pointer (used with wildcarded names), or 0 for first call
+            R4 = variable type
+
+        <=  R0 - R2 preserved
+            R3 = new context pointer (null-terminated)
+            R4 = variable type created if expression is evaluated
+    */
+    csstring_t cs = (csstring_t)r->r[0];
+    uint8_t *data = (uint8_t*)r->r[1];
+    uint32_t datalen = (uint32_t)r->r[2];
+    void *context = (void *)r->r[3];
+    sysvartype_t type; /* How to extract */
+    sysvarerror_t err;
+
+    err = sysvar_create(cs, data, datalen, type);
+    switch (err)
+    {
+        case sve_ok:
+            break;
+
+        case sve_badname:
+            return err_BadName;
+
+        case sve_badlength:
+            return err_BadLength;
+
+        case sve_nomemory:
+            return err_NoMemory;
+
+        case sve_badtype:
+            return err_BadType;
+
+        default:
+            return err_InternalError;
+    }
+
     return NULL;
 }

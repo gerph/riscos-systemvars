@@ -31,11 +31,16 @@ INCLUDES   =
 # (${CLIB} is implicit, unless NOCLIB = yes)
 LIBS       =
 
+# Options, specified with a + or -
+OPTS       = +MODULE_SWIS
+
 # Space separated list of defines to set, eg -DDEBUG
 CDEFINES   =
 
 # Objects to build, using the format o.<name> (will be varied for build type)
 OBJS       = o.modhead \
+			 o.csstring \
+			 o.variables \
 			 o.module
 
 include CModule

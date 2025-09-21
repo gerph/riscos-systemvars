@@ -41,7 +41,9 @@ help-string: SystemVars Module_MajorVersion_CMHG
 ; &C0000- &FFFC0 are for user applications.
 ; Bit 17 will always be clear on the SWI chunk number.
 ; Consult PRM 1-26 for more details.
-;swi-chunk-base-number: &C0000
+#ifdef MODULE_SWIS
+swi-chunk-base-number: &C4800
+#endif
 
 ; If you have any error messages in your module that are returned through
 ; the standard interfaces, you should use different error numbers for each,
@@ -52,13 +54,17 @@ help-string: SystemVars Module_MajorVersion_CMHG
 ; &1B000000- &1BFFFFFF are for program (NOT module) errors.
 ; &80000000- &FFFFFFFF are for serious hardware exceptions.
 ; Consult PRM 1-43, 5a-493 for more details.
-;error-base: &840000
+error-base: &840000
 
 ; Allocating error messages within the module is more efficient than doing
 ; so manually in your C code, and is less likely to pollute error number
 ; space. The number is optional, and if omitted will be allocated from the
 ; error chunk.
-;error-identifiers: err_Silly(&1234,"Silly")
+error-identifiers: err_BadName("BadName:Bad system variable name"),
+                   err_BadLength("BadLength:Bad system variable length"),
+                   err_BadType("BadType:Bad system variable type"),
+                   err_NoMemory("NoMemory:Not enough memory for system variable"),
+                   err_InternalError("InternalError:SysVar: Internal consistency fault")
 
 ; When the module is initialised, this routine will be entered. You should
 ; be very careful to initialise your module safely. If anything fails, you
@@ -91,7 +97,11 @@ finalisation-code: Mod_Final
 ; This should be the name of the module, or some obvious variant. You should
 ; register your SWI prefixes when you register a SWI chunk. Each name entry
 ; may be followed by /<entry> to use a particular routine to handle a SWI.
-;swi-decoding-table: SystemVars One Two Three
+#ifdef MODULE_SWIS
+swi-decoding-table: SystemVars \
+                        ReadVarVal/SWI_ReadVarVal,
+                        SetVarVal/SWI_SetVarVal
+#endif
 
 ; The library initialisation code sets up the C environment for use with
 ; this module. You may wish to perform some initialisation prior to the C
