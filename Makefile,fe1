@@ -42,7 +42,7 @@ CDEFINES   =
 OBJS       = o.modhead \
 			 o.csstring \
 			 o.os \
-			 o.gstrans \
+			 o.transform \
 			 o.variables \
 			 o.module
 

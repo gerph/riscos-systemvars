@@ -1,0 +1,159 @@
+/*******************************************************************
+ * File:        transform
+ * Purpose:     Management of performing GSTrans/EvaluateExpression on strings
+ * Author:      Gerph
+ * Date:        28 Sep 2025
+ ******************************************************************/
+
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "kernel.h"
+#include "riscos/NewErrors.h"
+
+#include "fortify.h"
+
+#include "os.h"
+#include "modhead.h"
+#include "transform.h"
+
+#define BUFFER_INITIAL      (16)
+#define BUFFER_EXTENSION    (16)
+
+/* FIXME: Reentrancy will cause issues here */
+int transform_buflen = 0;
+char *transform_buffer = NULL;
+
+/*************************************************** Gerph *********
+ Function:      transform_gstrans
+ Description:   Perform a translation through GSTrans, allocating into a buffer
+ Parameters:    flags = the GSTrans flags (see os.h)
+                data-> the input string to GSTrans
+                outputp-> where store the newly allocated buffer
+                outputlenp = where the length of the data will be stored
+                bytesreadp-> where the length read will be stored.
+ Returns:       pointer to an error, or NULL if successful
+ ******************************************************************/
+_kernel_oserror *transform_gstrans(uint32_t flags, const char *data,
+                                   char **outputp, uint32_t *outputlenp)
+{
+    int wrote;
+    if (transform_buffer == NULL)
+    {
+        transform_buflen = BUFFER_INITIAL;
+        transform_buffer = malloc(transform_buflen);
+        if (transform_buffer == NULL)
+            return err_NoMemory;
+    }
+    while (1)
+    {
+        _kernel_oserror *err;
+        err = os_gstrans(0, (const char *)data, transform_buffer, transform_buflen, &wrote);
+        if (err)
+        {
+            if (err->errnum == ErrorNumber_BuffOverflow)
+            {
+                /* Need to extend the buffer and try again */
+                int newbuflen = transform_buflen + BUFFER_EXTENSION;
+                char *newbuf = realloc(transform_buffer, newbuflen);
+                if (newbuf == NULL)
+                {
+                    /* Ran out of memory; fatal */
+                    return err_NoMemory;
+                }
+                transform_buffer = newbuf;
+                transform_buflen = newbuflen;
+            }
+            else
+            {
+                /* Error in GSTrans, so we give up */
+                return err;
+            }
+        }
+        else
+        {
+            /* No error - we got our string */
+            break;
+        }
+    }
+
+    *outputp = transform_buffer;
+    *outputlenp = wrote;
+    return NULL;
+}
+
+/*************************************************** Gerph *********
+ Function:      transform_evaluate
+ Description:   Perform a translation through EvaluteExpression, allocating into a buffer
+ Parameters:    data-> the input string to EvaluateExpression
+                datalen = the length of the input string
+                outputp-> where store the newly allocated buffer
+                outputlenp = where the length of the data will be stored
+                bytesreadp-> where the length read will be stored (or the number if is_number is true)
+                is_numberp-> where to store whether this is a number or string (bytesreadp will hold the number)
+ Returns:       pointer to an error, or NULL if successful
+ ******************************************************************/
+_kernel_oserror *transform_evaluate(const char *data, int datalen,
+                                    char **outputp, uint32_t *outputlenp,
+                                    bool *is_numberp)
+{
+    char *is_string = NULL; /* NULL if a number, or pointer if we got a string */
+    int wrote;
+    if (transform_buffer == NULL)
+    {
+        transform_buflen = BUFFER_INITIAL;
+        transform_buffer = malloc(transform_buflen);
+        if (transform_buffer == NULL)
+            return err_NoMemory;
+    }
+    while (1)
+    {
+        _kernel_oserror *err;
+        err = os_evaluateexpression((const char *)data, transform_buffer, transform_buflen, &is_string, &wrote);
+        if (err)
+        {
+            if (err->errnum == ErrorNumber_BuffOverflow)
+            {
+                /* Need to extend the buffer and try again */
+                int newbuflen = transform_buflen + BUFFER_EXTENSION;
+                char *newbuf = realloc(transform_buffer, newbuflen);
+                if (newbuf == NULL)
+                {
+                    /* Ran out of memory; fatal */
+                    return err_NoMemory;
+                }
+                transform_buffer = newbuf;
+                transform_buflen = newbuflen;
+            }
+            else
+            {
+                /* Error in GSTrans, so we give up */
+                return err;
+            }
+        }
+        else
+        {
+            /* No error - we got our string or number */
+            break;
+        }
+    }
+
+    *is_numberp = is_string ? false : true;
+
+    *outputp = transform_buffer;
+    *outputlenp = wrote;
+    return NULL;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      tranform_final
+ Description:   Finalise the transformation system, freeing all memory
+ Parameters:    none
+ Returns:       none
+ ******************************************************************/
+void transform_final(void)
+{
+    free(transform_buffer);
+    transform_buffer = NULL;
+}

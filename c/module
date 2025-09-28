@@ -15,7 +15,7 @@
 
 #include "variables.h"
 #include "os.h"
-#include "gstrans.h"
+#include "transform.h"
 
 
 /***************************************************************************
@@ -54,7 +54,7 @@ _kernel_oserror *Mod_Final(int fatal, int podule_base, void *pw)
 {
     printf("Module SystemVars dying\n");
     sysvar_final();
-    gstrans_final();
+    transform_final();
     Fortify_LeaveScope();
     return NULL;
 }
@@ -150,6 +150,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     void *context = (void *)r->r[3];
     sysvartype_t type = (sysvartype_t)r->r[4]; /* How to extract */
     sysvarerror_t sverr;
+    uint32_t datanumber;
 
     switch (type)
     {
@@ -157,12 +158,9 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
         case svt_macro:
             /* svt_string: Should be passed through GSTrans */
             /* svt_macro: Same as literal on store; GSTrans'd on read */
-            {
-                int bytesread = 0;
-                err = gstrans_translate(0, (char *)data, (char **)&data, (uint32_t *)&datalen, &bytesread);
-                if (err)
-                    return err;
-            }
+            err = transform_gstrans(0, (char *)data, (char **)&data, (uint32_t *)&datalen);
+            if (err)
+                return err;
             break;
 
         case svt_number:
@@ -172,7 +170,23 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
 
         case svt_expanded:
             /* Should be passed through EvaluateExpression */
-            /* FIXME: No Evaluated values */
+            {
+                bool is_number = true;
+                err = transform_evaluate((char *)data, datalen, (char **)&data, (uint32_t *)&datalen, &is_number);
+                if (err)
+                    return err;
+                if (is_number)
+                {
+                    datanumber = datalen;
+                    data = (uint8_t*)&datanumber;
+                    datalen = sizeof(number);
+                    type = svt_number;
+                }
+                else
+                {
+                    type = svt_string;
+                }
+            }
             break;
 
         case svt_literal:

@@ -5,6 +5,7 @@ DIM buffer% 256
 
 fail% = FALSE
 
+REM Type 4 test
 PRINT '"Test that setting variable as literal (type 4) works"
 SYS "SystemVars_SetVarVal", "Sys$Name", "hello<65>", 9, 0, 4
 SYS "SystemVars_ReadVarVal", "Sys$Name", buffer%, 256, 0, 0 TO ,,len,context,type
@@ -13,8 +14,10 @@ PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
 PRINT "String: ";$buffer%
 IF len <> 9 THENPRINT "Error: Length was wrong":fail%=TRUE
 IF type <> 0 THENPRINT "Error: Type was returned wrong":fail%=TRUE
+IF $buffer% <> "hello<65>" THENPRINT "Error: Value returned was wrong":fail%=TRUE
 
 :
+REM Type 0 test
 PRINT '"Test that setting variable with GSTrans (type 0) works"
 SYS "SystemVars_SetVarVal", "Sys$Name", "hello<65>", 9, 0, 0
 SYS "SystemVars_ReadVarVal", "Sys$Name", buffer%, 256, 0, 0 TO ,,len,context,type
@@ -22,7 +25,50 @@ PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
 ?(buffer%+len)=13
 PRINT "String: ";$buffer%
 IF len <> 6 THENPRINT "Error: Length was wrong":fail%=TRUE
-IF type <> 0 THENPRINT "Error: Type was returned wrong":fail%=TRUE
+IF type <> 0 THENPRINT "Error: Type returned was wrong":fail%=TRUE
+IF $buffer% <> "helloA" THENPRINT "Error: Value returned was wrong":fail%=TRUE
+
+REM Type 3 test (strings)
+PRINT '"Test that setting variable with EvaluateExpression (type 3) works with strings"
+SYS "SystemVars_SetVarVal", "MyEval", """<CLI$Prompt>""", 14, 0, 3
+SYS "SystemVars_ReadVarVal", "MyEval", buffer%, 256, 0, 0 TO ,,len,context,type
+PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
+?(buffer%+len)=13
+PRINT "String: ";$buffer%
+IF len <> 1 THENPRINT "Error: Length was wrong":fail%=TRUE
+IF type <> 0 THENPRINT "Error: Type returned was wrong":fail%=TRUE
+IF $buffer% <> "*" THENPRINT "Error: Value returned was wrong":fail%=TRUE
+
+REM Type 3 test (numbers)
+PRINT '"Test that setting variable with EvaluateExpression (type 3) works with numbers"
+SYS "SystemVars_SetVarVal", "MyEval", "8 * 2", 14, 0, 3
+SYS "SystemVars_ReadVarVal", "MyEval", buffer%, 256, 0, 0 TO ,,len,context,type
+PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
+IF type = 1 THEN
+    PRINT "Number: ";!buffer%
+ELSE
+    ?(buffer%+len)=13
+    PRINT "String: ";$buffer%
+ENDIF
+IF len <> 4 THENPRINT "Error: Length was wrong":fail%=TRUE
+IF type <> 1 THENPRINT "Error: Type returned was wrong":fail%=TRUE
+IF !buffer% <> 16 THENPRINT "Error: Value returned was wrong":fail%=TRUE
+
+REM Type 1 test
+PRINT '"Test that setting variable from a number works"
+buffer%!8=42
+SYS "SystemVars_SetVarVal", "MyEval", buffer%+8, 4, 0, 1
+SYS "SystemVars_ReadVarVal", "MyEval", buffer%, 256, 0, 0 TO ,,len,context,type
+PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
+IF type = 1 THEN
+    PRINT "Number: ";!buffer%
+ELSE
+    ?(buffer%+len)=13
+    PRINT "String: ";$buffer%
+ENDIF
+IF len <> 4 THENPRINT "Error: Length was wrong":fail%=TRUE
+IF type <> 1 THENPRINT "Error: Type returned was wrong":fail%=TRUE
+IF !buffer% <> 42 THENPRINT "Error: Value returned was wrong":fail%=TRUE
 
 PRINT
 IF fail% THEN ERROR EXT 0, "Failed the test"

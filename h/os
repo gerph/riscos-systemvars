@@ -43,7 +43,7 @@ _kernel_oserror *os_gstrans(uint32_t flags,
  Parameters:    expr-> the expression to evaluate, terminated by 13, 10 or 0.
                 buffer-> where to write the output (or NULL if you only want a number)
                 buffferlen = length of the buffer, or -ve if you only want a number
-                bufferoutp-> the output buffer pointer, or NULL if we got a string
+                bufferoutp-> the output buffer pointer, or NULL if we got a number
                 bufferoutlenp-> the buffer length, or the number if a number was read
  Returns:       pointer to error, or NULL if ok.
  ******************************************************************/
