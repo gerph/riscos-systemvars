@@ -83,6 +83,14 @@ sysvar_t *sysvar_read(csstring_t   cs,
                       char        *context);
 
 /*************************************************** Gerph *********
+ Function:      sysvar_final
+ Description:   Finalise the System Variables and release all memory
+ Parameters:    none
+ Returns:       none
+ ******************************************************************/
+void sysvar_final(void);
+
+/*************************************************** Gerph *********
  Function:      sysvars_dump
  Description:   Produce a list of all the system variables that we know
  Parameters:    none

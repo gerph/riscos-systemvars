@@ -11,6 +11,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "fortify.h"
+
 #include "csstring.h"
 #include "variables.h"
 
@@ -159,6 +161,27 @@ sysvar_t *sysvar_read(csstring_t   cs,
             return cur;
     }
     return NULL;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      sysvar_final
+ Description:   Finalise the System Variables and release all memory
+ Parameters:    none
+ Returns:       none
+ ******************************************************************/
+void sysvar_final(void)
+{
+    sysvar_t *cur = sysvars;
+    sysvars = NULL;
+    while (cur)
+    {
+        sysvar_t *next = cur->next;
+        free(cur->name);
+        free(cur->value.data);
+        free(cur);
+        cur = next;
+    }
 }
 
 

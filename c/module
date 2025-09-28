@@ -9,12 +9,13 @@
 #include <string.h>
 
 #include "kernel.h"
-#include "riscos/NewErrors.h"
+#include "fortify.h"
 
 #include "modhead.h"
 
 #include "variables.h"
 #include "os.h"
+#include "gstrans.h"
 
 
 /***************************************************************************
@@ -31,6 +32,7 @@
  **************************************************************************/
 _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
 {
+    Fortify_EnterScope();
     printf("Module SystemVars initialised\n");
     return NULL;
 }
@@ -51,7 +53,9 @@ _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
 _kernel_oserror *Mod_Final(int fatal, int podule_base, void *pw)
 {
     printf("Module SystemVars dying\n");
-    sysvars_dump();
+    sysvar_final();
+    gstrans_final();
+    Fortify_LeaveScope();
     return NULL;
 }
 
@@ -123,14 +127,6 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
 }
 
 
-#define BUFFER_INITIAL      (16)
-#define BUFFER_EXTENSION    (16)
-
-/* FIXME: Reentrancy will cause issues here */
-int gstrans_buflen = 0;
-char *gstrans_buffer = NULL;
-
-
 _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
 {
     /*
@@ -162,48 +158,10 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             /* svt_string: Should be passed through GSTrans */
             /* svt_macro: Same as literal on store; GSTrans'd on read */
             {
-
                 int bytesread = 0;
-                if (gstrans_buffer == NULL)
-                {
-                    gstrans_buflen = BUFFER_INITIAL;
-                    gstrans_buffer = malloc(gstrans_buflen);
-                    if (gstrans_buffer == NULL)
-                        return err_NoMemory;
-                }
-                while (1)
-                {
-                    err = os_gstrans(0, (const char *)data, gstrans_buffer, gstrans_buflen, &bytesread);
-                    if (err)
-                    {
-                        if (err->errnum == ErrorNumber_BuffOverflow)
-                        {
-                            /* Need to extend the buffer and try again */
-                            int newbuflen = gstrans_buflen + BUFFER_EXTENSION;
-                            char *newbuf = realloc(gstrans_buffer, newbuflen);
-                            if (newbuf == NULL)
-                            {
-                                /* Ran out of memory; fatal */
-                                return err_NoMemory;
-                            }
-                            gstrans_buffer = newbuf;
-                            gstrans_buflen = newbuflen;
-                        }
-                        else
-                        {
-                            /* Error in GSTrans, so we give up */
-                            return err;
-                        }
-                    }
-                    else
-                    {
-                        /* No error - we got our string */
-                        break;
-                    }
-                }
-
-                data = (uint8_t*)gstrans_buffer;
-                datalen = bytesread;
+                err = gstrans_translate(0, (char *)data, (char **)&data, (uint32_t *)&datalen, &bytesread);
+                if (err)
+                    return err;
             }
             break;
 

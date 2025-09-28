@@ -42,8 +42,11 @@ CDEFINES   =
 OBJS       = o.modhead \
 			 o.csstring \
 			 o.os \
+			 o.gstrans \
 			 o.variables \
 			 o.module
+
+FORTIFY    = yes
 
 include CModule
 

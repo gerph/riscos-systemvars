@@ -8,6 +8,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "fortify.h"
+
 #include "csstring.h"
 
 /*************************************************** Gerph *********
