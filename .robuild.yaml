@@ -24,13 +24,26 @@ jobs:
     # The build will terminate if any command returns a non-0 return code or an error.
     script:
       - echo *** Build the test ***
-      - amu -f Makefile
+      - amu -f MakefileTest
       - echo *** Run the test ***
       - /aif32.Varstest
 
       - echo
       - echo *** Build the module ***
-      - amu -f MakefileModule ram
+      - amu -f Makefile ram
+
+      - echo
+      - echo *** Load the module ***
+      - RMLoad rm32.SystemVars
+
+      - echo
+      - echo *** Simple test of the module ***
+      - /TestSetRead
+
+      - echo
+      - echo *** Kill the module ***
+      - RMKill SystemVars
+
       - echo
       - echo *** SUCCESS ***
 

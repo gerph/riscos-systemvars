@@ -1,0 +1,55 @@
+/*******************************************************************
+ * File:        os
+ * Purpose:     OS interfaces
+ * Author:      Gerph
+ * Date:        28 Sep 2025
+ ******************************************************************/
+
+#ifndef OS_H
+#define OS_H
+
+#include <stdint.h>
+#include "swis.h"
+
+
+#define GSTRANS_NOQUOTES    (1u<<31)
+#define GSTRANS_NOESCAPES   (1u<<30)
+#define GSTRANS_SPACETERM   (1u<<29)
+
+
+/*************************************************** Gerph *********
+ Function:      os_gstrans
+ Description:   GSTrans a string
+ Parameters:    flags = the flags to use:
+                            b31: No quotes
+                            b30: No escaped controls
+                            b29: Space terminator
+                s-> the string to convert
+                output-> where to write output
+                size = the size of the output buffer
+                readp-> where to store the number of bytes read
+ Returns:       pointer to error, or NULL if ok.
+ ******************************************************************/
+_kernel_oserror *os_gstrans(uint32_t flags,
+                            const char *s,
+                            char *output,
+                            int size,
+                            int *readp);
+
+
+/*************************************************** Gerph *********
+ Function:      os_evaluateexpression
+ Description:   Evaluate an expression and return a string or number
+ Parameters:    expr-> the expression to evaluate, terminated by 13, 10 or 0.
+                buffer-> where to write the output (or NULL if you only want a number)
+                buffferlen = length of the buffer, or -ve if you only want a number
+                bufferoutp-> the output buffer pointer, or NULL if we got a string
+                bufferoutlenp-> the buffer length, or the number if a number was read
+ Returns:       pointer to error, or NULL if ok.
+ ******************************************************************/
+_kernel_oserror *os_evaluateexpression(const char *expr,
+                                       char *buffer, int bufferlen,
+                                       char **bufferoutp,
+                                       int *bufferoutlenp);
+
+#endif

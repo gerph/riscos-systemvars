@@ -9,9 +9,12 @@
 #include <string.h>
 
 #include "kernel.h"
+#include "riscos/NewErrors.h"
+
 #include "modhead.h"
 
 #include "variables.h"
+#include "os.h"
 
 
 /***************************************************************************
@@ -85,7 +88,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     uint8_t *data = (uint8_t*)r->r[1];
     uint32_t datalen = (uint32_t)r->r[2];
     void *context = (void *)r->r[3];
-    sysvartype_t type; /* How to extract */
+    sysvartype_t type = (sysvartype_t)r->r[4]; /* How to extract */
     sysvar_t *var;
 
     var = sysvar_read(cs, context);
@@ -119,6 +122,15 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     return NULL;
 }
 
+
+#define BUFFER_INITIAL      (16)
+#define BUFFER_EXTENSION    (16)
+
+/* FIXME: Reentrancy will cause issues here */
+int gstrans_buflen = 0;
+char *gstrans_buffer = NULL;
+
+
 _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
 {
     /*
@@ -134,18 +146,94 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             R3 = new context pointer (null-terminated)
             R4 = variable type created if expression is evaluated
     */
+    _kernel_oserror *err;
+
     csstring_t cs = (csstring_t)r->r[0];
     uint8_t *data = (uint8_t*)r->r[1];
     uint32_t datalen = (uint32_t)r->r[2];
     void *context = (void *)r->r[3];
-    sysvartype_t type; /* How to extract */
-    sysvarerror_t err;
+    sysvartype_t type = (sysvartype_t)r->r[4]; /* How to extract */
+    sysvarerror_t sverr;
 
-    /* FIXME: No conversion of the data type */
-    /* FIXME: No code variables */
+    switch (type)
+    {
+        case svt_string:
+        case svt_macro:
+            /* svt_string: Should be passed through GSTrans */
+            /* svt_macro: Same as literal on store; GSTrans'd on read */
+            {
 
-    err = sysvar_create(cs, data, datalen, type);
-    switch (err)
+                int bytesread = 0;
+                if (gstrans_buffer == NULL)
+                {
+                    gstrans_buflen = BUFFER_INITIAL;
+                    gstrans_buffer = malloc(gstrans_buflen);
+                    if (gstrans_buffer == NULL)
+                        return err_NoMemory;
+                }
+                while (1)
+                {
+                    err = os_gstrans(0, (const char *)data, gstrans_buffer, gstrans_buflen, &bytesread);
+                    if (err)
+                    {
+                        if (err->errnum == ErrorNumber_BuffOverflow)
+                        {
+                            /* Need to extend the buffer and try again */
+                            int newbuflen = gstrans_buflen + BUFFER_EXTENSION;
+                            char *newbuf = realloc(gstrans_buffer, newbuflen);
+                            if (newbuf == NULL)
+                            {
+                                /* Ran out of memory; fatal */
+                                return err_NoMemory;
+                            }
+                            gstrans_buffer = newbuf;
+                            gstrans_buflen = newbuflen;
+                        }
+                        else
+                        {
+                            /* Error in GSTrans, so we give up */
+                            return err;
+                        }
+                    }
+                    else
+                    {
+                        /* No error - we got our string */
+                        break;
+                    }
+                }
+
+                data = (uint8_t*)gstrans_buffer;
+                datalen = bytesread;
+            }
+            break;
+
+        case svt_number:
+            /* Is a 4 byte value (1 word) */
+            /* In 64-bit OS this will remain as 4-bytes, and a new way of setting the value is required */
+            break;
+
+        case svt_expanded:
+            /* Should be passed through EvaluateExpression */
+            /* FIXME: No Evaluated values */
+            break;
+
+        case svt_literal:
+            /* Straight through */
+            type = svt_string;
+            break;
+
+        case svt_code:
+            /* FIXME: No code variables */
+            break;
+
+        /* FIXME: Add svt_number64? */
+
+        default:
+            return err_BadType;
+    }
+
+    sverr = sysvar_create(cs, data, datalen, type);
+    switch (sverr)
     {
         case sve_ok:
             break;
@@ -168,3 +256,46 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
 
     return NULL;
 }
+
+
+#ifdef DEBUG_COMMANDS
+/***************************************************************************
+ * Description:  Star command and help request handler routines.
+ * Parameters:   arg_string = pointer to argument string (control
+ *                            terminated), or output buffer
+ *               argc       = number of arguments passed
+ *               number     = command number (see CMD_* definitions below)
+ *               pw         = private word for module
+ * On exit:      If number indicates a help entry:
+ *                 To output, assemble zero terminated output into
+ *                 arg_string, and return help_PRINT_BUFFER to print it.
+ *                 To stay silent, return NULL.
+ *                 To given an error, return an error pointer.
+ *                 [In this case, you need to cast the 'const' away]
+ *               If number indicates a configure option:
+ *                 If arg_string is arg_STATUS, then print status, otherwise
+ *                 use argc and arg_string to set option.
+ *                 Return NULL for no error.
+ *                 Return one of the four error codes below (configure_*)
+ *                 for a generic error message.
+ *                 Return an error pointer for a custom error.
+ *               If number indicates a command entry:
+ *                 Execute the command given by number, and arg_string.
+ *                 Return NULL on success,
+ *                 Return a pointer to an error block on failure.
+ **************************************************************************/
+_kernel_oserror *Mod_Command(const char *arg_string, int argc, int number,
+                             void *pw)
+{
+    /* Nothing; all commands are handled by handlers */
+    return NULL;
+}
+
+
+_kernel_oserror *Cmd_SystemVarsList(const char *arg_string, int argc,
+                                    int number, void *pw)
+{
+    sysvars_dump();
+    return NULL;
+}
+#endif

@@ -216,8 +216,13 @@ swi-decoding-table: SystemVars \
 ;   no-handler:
 ;     The command has no handler function present. This is useful for
 ;     creating help-only commands.
-;command-keyword-table: Mod_Command
-;   ModuleCommand()
+#ifdef DEBUG_COMMANDS
+command-keyword-table: Mod_Command
+   SystemVars_List(min-args: 0, max-args: 0,
+                   help-text: "List all the system variables for debugging.",
+                   handler: Cmd_SystemVarsList)
+#endif
+
 
 ; The module service entry will be called to process services. You are
 ; strongly recommended to include the numbers of the services you wish to

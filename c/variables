@@ -162,6 +162,7 @@ sysvar_t *sysvar_read(csstring_t   cs,
 }
 
 
+#ifdef DEBUG_COMMANDS
 /*************************************************** Gerph *********
  Function:      sysvars_dump
  Description:   Produce a list of all the system variables that we know
@@ -177,3 +178,4 @@ void sysvars_dump(void)
                cur->name, cur->type, cur->value.datalen, cur->value.datalen, cur->value.data);
     }
 }
+#endif

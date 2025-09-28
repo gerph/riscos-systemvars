@@ -1,0 +1,30 @@
+REM>TestSetRead
+REM Testing that the setting of variables and their reading works.
+
+DIM buffer% 256
+
+fail% = FALSE
+
+PRINT '"Test that setting variable as literal (type 4) works"
+SYS "SystemVars_SetVarVal", "Sys$Name", "hello<65>", 9, 0, 4
+SYS "SystemVars_ReadVarVal", "Sys$Name", buffer%, 256, 0, 0 TO ,,len,context,type
+PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
+?(buffer%+len)=13
+PRINT "String: ";$buffer%
+IF len <> 9 THENPRINT "Error: Length was wrong":fail%=TRUE
+IF type <> 0 THENPRINT "Error: Type was returned wrong":fail%=TRUE
+
+:
+PRINT '"Test that setting variable with GSTrans (type 0) works"
+SYS "SystemVars_SetVarVal", "Sys$Name", "hello<65>", 9, 0, 0
+SYS "SystemVars_ReadVarVal", "Sys$Name", buffer%, 256, 0, 0 TO ,,len,context,type
+PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
+?(buffer%+len)=13
+PRINT "String: ";$buffer%
+IF len <> 6 THENPRINT "Error: Length was wrong":fail%=TRUE
+IF type <> 0 THENPRINT "Error: Type was returned wrong":fail%=TRUE
+
+PRINT
+IF fail% THEN ERROR EXT 0, "Failed the test"
+PRINT "Passed!"
+END
