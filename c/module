@@ -94,6 +94,11 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     void *context = (void *)r->r[3];
     sysvartype_t type = (sysvartype_t)r->r[4]; /* How to extract */
     sysvar_t *var;
+    char numbuffer[10]; /* Length of the longest uint32_t */
+
+    uint8_t *vardata;
+    uint32_t vardatalen;
+    sysvartype_t vartype;
 
     var = sysvar_read(cs, context);
     if (var == NULL)
@@ -102,12 +107,53 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
         return err_NoSuchVariable;
     }
 
+    vardata = var->value.data;
+    vardatalen = var->value.datalen;
+    vartype = var->type;
+
+    switch (type)
+    {
+        case svt_natural:
+        case svt_expanded:
+            /* svt_natural: We do nothing for strings and numbers */
+            /* svt_expanded: This has the same meaning as natural format */
+            break;
+
+        case svt_number:
+            if (var->type != svt_number)
+                return err_BadType;
+            break;
+
+        case svt_macro:
+            /* Need to expand with GSTrans */
+            /* FIXME: Macros need implementing with the expansion here */
+            break;
+
+        case svt_literal:
+            /* Always returns as a string, even if the value is a number */
+            if (var->type == svt_number)
+            {
+                /* We need to convert to a string */
+                vardatalen = sprintf(numbuffer, "%u", *(uint32_t *)var->value.data);
+                vardata = (uint8_t*)numbuffer;
+                vartype = svt_string;
+            }
+            break;
+
+        case svt_code:
+            break;
+
+    }
+
+    /* FIXME: No code variables */
+
     if (datalen & (1u<<31))
     {
         /* Check for existance - documented in PRM*/
-        r->r[2] = ~var->value.datalen;
+        r->r[2] = ~vardatalen;
         return err_BufferOverflow;
     }
+
     if (datalen < var->value.datalen)
     {
         /* Not enough memory for the string */
@@ -115,13 +161,10 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
         return err_BufferOverflow;
     }
 
-    /* FIXME: No conversion from the variable type */
-    /* FIXME: No code variables */
-
-    memcpy(data, var->value.data, var->value.datalen);
-    r->r[2] = var->value.datalen;
+    memcpy(data, vardata, vardatalen);
+    r->r[2] = vardatalen;
     r->r[3] = (int)var->name;
-    r->r[4] = var->type;
+    r->r[4] = vartype;
 
     return NULL;
 }

@@ -54,6 +54,21 @@ IF len <> 4 THENPRINT "Error: Length was wrong":fail%=TRUE
 IF type <> 1 THENPRINT "Error: Type returned was wrong":fail%=TRUE
 IF !buffer% <> 16 THENPRINT "Error: Value returned was wrong":fail%=TRUE
 
+REM Type 3 test (numbers, read as string)
+PRINT '"Test that setting variable with EvaluateExpression (type 3) works with numbers read as string"
+SYS "SystemVars_SetVarVal", "MyEval", "8 * 2", 14, 0, 3
+SYS "SystemVars_ReadVarVal", "MyEval", buffer%, 256, 0, 4 TO ,,len,context,type
+PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
+IF type = 1 THEN
+    PRINT "Number: ";!buffer%
+ELSE
+    ?(buffer%+len)=13
+    PRINT "String: ";$buffer%
+ENDIF
+IF len <> 2 THENPRINT "Error: Length was wrong":fail%=TRUE
+IF type <> 0 THENPRINT "Error: Type returned was wrong":fail%=TRUE
+IF $buffer% <> "16" THENPRINT "Error: Value returned was wrong":fail%=TRUE
+
 REM Type 1 test
 PRINT '"Test that setting variable from a number works"
 buffer%!8=42
@@ -71,6 +86,9 @@ IF type <> 1 THENPRINT "Error: Type returned was wrong":fail%=TRUE
 IF !buffer% <> 42 THENPRINT "Error: Value returned was wrong":fail%=TRUE
 
 PRINT
-IF fail% THEN ERROR EXT 0, "Failed the test"
+IF fail% THEN
+    *SystemVars_List
+    ERROR EXT 0, "Failed the test"
+ENDIF
 PRINT "Passed!"
 END

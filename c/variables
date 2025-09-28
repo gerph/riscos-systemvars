@@ -197,8 +197,20 @@ void sysvars_dump(void)
     sysvar_t *cur;
     for (cur=sysvars; cur; cur=cur->next)
     {
-        printf("Variable %-20s : type=%-2i, length=%-3i : value : %.*s\n",
-               cur->name, cur->type, cur->value.datalen, cur->value.datalen, cur->value.data);
+        printf("Variable %-20s : type=%-2i, length=%-3i : ",
+               cur->name, cur->type, cur->value.datalen);
+        if (cur->type == svt_string)
+        {
+            printf("value : %.*s\n", cur->value.datalen, cur->value.data);
+        }
+        else if (cur->type == svt_number)
+        {
+            printf("number : %u\n", *(uint32_t*)cur->value.data);
+        }
+        else
+        {
+            printf("unknown\n");
+        }
     }
 }
 #endif
