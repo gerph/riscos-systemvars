@@ -130,6 +130,12 @@ REPEAT
 UNTIL (flags% AND 1) = 1 OR count% > 10
 IF count% > 10 THENPRINT "Error: Iterated too many times":fail%=TRUE
 
+
+REM Test that deletion works.
+PRINT '"Test that the deletion works"
+SYS "SystemVars_SetVarVal", "MyMacro", 0, -1, 0, 0
+
+
 PRINT
 IF fail% THEN
     *SystemVars_List

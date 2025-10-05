@@ -200,6 +200,15 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     sysvarerror_t sverr;
     uint32_t datanumber;
 
+    if (datalen & (1u<<31))
+    {
+        /* This is a deletion operation */
+        bool deleted = sysvar_delete(cs);
+        if (deleted)
+            return NULL;
+        return err_NoSuchVariable;
+    }
+
     switch (type)
     {
         case svt_string:

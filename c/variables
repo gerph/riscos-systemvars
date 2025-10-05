@@ -144,6 +144,20 @@ no_memory_0:
 
 
 /*************************************************** Gerph *********
+ Function:      sysvars_free
+ Description:   Free the system variable supplied (which has already been unlinked)
+ Parameters:    cur-> the variable to free
+ Returns:       none
+ ******************************************************************/
+void sysvars_free(sysvar_t *cur)
+{
+    free(cur->name);
+    free(cur->value.data);
+    free(cur);
+}
+
+
+/*************************************************** Gerph *********
  Function:      sysvar_read
  Description:   Retrieve a system variable by name, which might be wildcarded
  Parameters:    var-> variable name (ctrlspc-terminated, may be wildcard)
@@ -203,6 +217,74 @@ sysvar_t *sysvar_read(csstring_t   cs,
         }
     }
     return NULL;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      sysvar_delete
+ Description:   Delete a system variable by name, which might be wildcarded
+ Parameters:    var-> variable name (ctrlspc-terminated, may be wildcard)
+ Returns:       true if we deleted anything; false if we did not
+ ******************************************************************/
+bool sysvar_delete(csstring_t cs)
+{
+    sysvar_t *lastvar = NULL;
+    sysvar_t *cur;
+    sysvar_t *nextvar;
+    bool deleted = false;
+    bool wildcarded = cswildcarded(cs);
+    if (wildcarded)
+    {
+        for (cur=sysvars; cur; cur=nextvar)
+        {
+            int match = wildmatch_sysvars(cs, cur->name);
+            nextvar = cur->next;
+            dprintf("Checking %s against %s gave %i\n", cur->name, cs, match);
+            if (match == 1)
+            {
+                /* Matched, so we can delete this variable */
+                if (lastvar == NULL)
+                    sysvars = nextvar;
+                else
+                    lastvar->next = nextvar;
+                sysvars_free(cur);
+                nextvar = lastvar;
+                deleted = true;
+            }
+            else
+            {
+                lastvar = cur;
+            }
+        }
+    }
+    else
+    {
+        dprintf("Non-wildcarded search for %s\n", cs);
+
+        for (cur=sysvars; cur; cur=nextvar)
+        {
+            int match = sysvar_matchname(cur->name, cs);
+            nextvar = cur->next;
+            dprintf("Checking %s against %s gave %i\n", cur->name, cs, match);
+            if (match == 0)
+            {
+                /* Matched, so we can delete this variable */
+                if (lastvar == NULL)
+                    sysvars = cur->next;
+                else
+                    lastvar->next = cur->next;
+                sysvars_free(cur);
+                nextvar = lastvar;
+                deleted = true;
+                continue;
+            }
+            else
+            {
+                lastvar = cur;
+            }
+        }
+    }
+    return deleted;
 }
 
 
@@ -294,9 +376,7 @@ void sysvar_final(void)
     while (cur)
     {
         sysvar_t *next = cur->next;
-        free(cur->name);
-        free(cur->value.data);
-        free(cur);
+        sysvars_free(cur);
         cur = next;
     }
 }

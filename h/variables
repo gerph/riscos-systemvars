@@ -102,6 +102,14 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
                                       char       **contextp);
 
 /*************************************************** Gerph *********
+ Function:      sysvar_delete
+ Description:   Delete a system variable by name, which might be wildcarded
+ Parameters:    var-> variable name (ctrlspc-terminated, may be wildcard)
+ Returns:       true if we deleted anything; false if we did not
+ ******************************************************************/
+bool sysvar_delete(csstring_t cs);
+
+/*************************************************** Gerph *********
  Function:      sysvar_final
  Description:   Finalise the System Variables and release all memory
  Parameters:    none
