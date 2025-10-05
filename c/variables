@@ -166,6 +166,70 @@ sysvar_t *sysvar_read(csstring_t   cs,
 }
 
 
+
+/*************************************************** Gerph *********
+ Function:      sysvar_update_or_create
+ Description:   Update an existing system variable, or create if doesn't exist
+ Parameters:    cs-> variable name (ctrlspc-terminated)
+                data-> value of the variable
+                datalen = the length of the variable
+                type = type of the variable
+                context-> where to store the last variable name returned,
+                          and where to start searching, or NULL to start at
+                          the beginning
+ Returns:       error code
+ ******************************************************************/
+sysvarerror_t sysvar_update_or_create(csstring_t   cs,
+                                      uint8_t     *data,
+                                      uint32_t     datalen,
+                                      sysvartype_t type,
+                                      char       **contextp)
+{
+    char *context = *contextp;
+    sysvar_t *sysvar = sysvar_read(cs, context);
+    if (sysvar == NULL)
+    {
+        /* Not found, so this is a new variable */
+        *contextp = NULL;
+        return sysvar_create(cs, data, datalen, type);
+    }
+    /* We are updating a variable */
+
+    /* FIXME: We should apply value length checks like in create */
+
+    /* The context has been set to the variable name */
+    *contextp = sysvar->name;
+
+    {
+        uint8_t *newdata;
+        /* Note: This method means that we won't reallocate memory if the string gets shorter.
+         *       However, if you were to allocate really long variable (eg 4000 bytes) then update
+         *       as 1 byte long, you would effectively waste the remaining space. This could be
+         *       handled better.
+         */
+        if (sysvar->value.datalen < datalen)
+        {
+            newdata = malloc(datalen + 1);
+            if (newdata == NULL)
+                return sve_nomemory;
+            free(sysvar->value.data);
+        }
+        else
+        {
+            newdata = sysvar->value.data;
+        }
+
+        memcpy(newdata, data, datalen);
+        newdata[datalen] = '\0';
+
+        sysvar->value.data = newdata;
+        sysvar->value.datalen = datalen;
+        sysvar->type = type;
+    }
+    return sve_ok;
+}
+
+
 /*************************************************** Gerph *********
  Function:      sysvar_final
  Description:   Finalise the System Variables and release all memory

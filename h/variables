@@ -82,6 +82,25 @@ sysvarerror_t sysvar_create(csstring_t   cs,
 sysvar_t *sysvar_read(csstring_t   cs,
                       char        *context);
 
+
+/*************************************************** Gerph *********
+ Function:      sysvar_update_or_create
+ Description:   Update an existing system variable, or create if doesn't exist
+ Parameters:    cs-> variable name (ctrlspc-terminated)
+                data-> value of the variable
+                datalen = the length of the variable
+                type = type of the variable
+                context-> where to store the last variable name returned,
+                          and where to start searching, or NULL to start at
+                          the beginning
+ Returns:       error code
+ ******************************************************************/
+sysvarerror_t sysvar_update_or_create(csstring_t   cs,
+                                      uint8_t     *data,
+                                      uint32_t     datalen,
+                                      sysvartype_t type,
+                                      char       **contextp);
+
 /*************************************************** Gerph *********
  Function:      sysvar_final
  Description:   Finalise the System Variables and release all memory

@@ -195,7 +195,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     csstring_t cs = (csstring_t)r->r[0];
     uint8_t *data = (uint8_t*)r->r[1];
     uint32_t datalen = (uint32_t)r->r[2];
-    void *context = (void *)r->r[3];
+    char *context = (char *)r->r[3];
     sysvartype_t type = (sysvartype_t)r->r[4]; /* How to extract */
     sysvarerror_t sverr;
     uint32_t datanumber;
@@ -255,7 +255,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             return err_BadType;
     }
 
-    sverr = sysvar_create(cs, data, datalen, type);
+    sverr = sysvar_update_or_create(cs, data, datalen, type, &context);
     switch (sverr)
     {
         case sve_ok:
@@ -276,6 +276,8 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
         default:
             return err_InternalError;
     }
+
+    r->r[3] = (int)context;
 
     return NULL;
 }
