@@ -18,7 +18,7 @@
 
 
 /* Define this to debug this file */
-#define DEBUG
+//#define DEBUG
 
 
 #ifdef DEBUG
@@ -92,11 +92,12 @@ sysvarerror_t sysvar_create(csstring_t   cs,
     if (sysvar->name == NULL)
         goto no_memory_1;
 
-    newdata = malloc(datalen);
+    newdata = malloc(datalen + 1);
     if (newdata == NULL)
         goto no_memory_2;
 
     memcpy(newdata, data, datalen);
+    newdata[datalen] = '\0';
 
     sysvar->value.data = newdata;
     sysvar->value.datalen = datalen;
@@ -157,6 +158,7 @@ sysvar_t *sysvar_read(csstring_t   cs,
     {
         /* FIXME: I'm ignoring wildcards right now */
         int match = sysvar_matchname(cur->name, cs);
+        dprintf("Checking %s against %s gave %i\n", cur->name, cs, match);
         if (match == 0)
             return cur;
     }
@@ -201,11 +203,15 @@ void sysvars_dump(void)
                cur->name, cur->type, cur->value.datalen);
         if (cur->type == svt_string)
         {
-            printf("value : %.*s\n", cur->value.datalen, cur->value.data);
+            printf("string : %.*s\n", cur->value.datalen, cur->value.data);
         }
         else if (cur->type == svt_number)
         {
             printf("number : %u\n", *(uint32_t*)cur->value.data);
+        }
+        else if (cur->type == svt_macro)
+        {
+            printf("macro : %.*s\n", cur->value.datalen, cur->value.data);
         }
         else
         {

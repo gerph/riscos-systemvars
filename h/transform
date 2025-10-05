@@ -21,7 +21,6 @@
                 data-> the input string to GSTrans
                 outputp-> where store the newly allocated buffer
                 outputlenp = where the length of the data will be stored
-                bytesreadp-> where the length read will be stored.
  Returns:       pointer to an error, or NULL if successful
  ******************************************************************/
 _kernel_oserror *transform_gstrans(uint32_t flags, const char *data,
@@ -34,8 +33,7 @@ _kernel_oserror *transform_gstrans(uint32_t flags, const char *data,
  Parameters:    data-> the input string to EvaluateExpression
                 datalen = the length of the input string
                 outputp-> where store the newly allocated buffer
-                outputlenp = where the length of the data will be stored
-                bytesreadp-> where the length read will be stored (or the number if is_number is true)
+                outputlenp-> where the length read will be stored (or the number if is_number is true)
                 is_numberp-> where to store whether this is a number or string (bytesreadp will hold the number)
  Returns:       pointer to an error, or NULL if successful
  ******************************************************************/

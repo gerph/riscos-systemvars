@@ -99,6 +99,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     uint8_t *vardata;
     uint32_t vardatalen;
     sysvartype_t vartype;
+    const char *varname;
 
     var = sysvar_read(cs, context);
     if (var == NULL)
@@ -107,42 +108,46 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
         return err_NoSuchVariable;
     }
 
+    varname = var->name;
     vardata = var->value.data;
     vardatalen = var->value.datalen;
     vartype = var->type;
 
-    switch (type)
+    if (type == svt_expanded)
     {
-        case svt_natural:
-        case svt_expanded:
-            /* svt_natural: We do nothing for strings and numbers */
-            /* svt_expanded: This has the same meaning as natural format */
-            break;
+        /* They want a string form - converted to a value to be read as a string */
+        switch (vartype)
+        {
+            case svt_string:
+                break;
 
-        case svt_number:
-            if (var->type != svt_number)
-                return err_BadType;
-            break;
+            case svt_number:
+                {
+                    /* We need to convert to a string */
+                    vardatalen = sprintf(numbuffer, "%u", *(uint32_t *)vardata);
+                    vardata = (uint8_t*)numbuffer;
+                }
+                break;
 
-        case svt_macro:
-            /* Need to expand with GSTrans */
-            /* FIXME: Macros need implementing with the expansion here */
-            break;
+            case svt_macro:
+                /* Need to expand with GSTrans */
+                {
+                    _kernel_oserror *err;
+                    uint8_t *gsdata;
+                    uint32_t gsdatalen;
+                    err = transform_gstrans(0, (char *)vardata, (char **)&gsdata, (uint32_t *)&gsdatalen);
+                    if (err)
+                        return err;
+                    vardata = gsdata;
+                    vardatalen = gsdatalen;
+                }
+                break;
 
-        case svt_literal:
-            /* Always returns as a string, even if the value is a number */
-            if (var->type == svt_number)
-            {
-                /* We need to convert to a string */
-                vardatalen = sprintf(numbuffer, "%u", *(uint32_t *)var->value.data);
-                vardata = (uint8_t*)numbuffer;
-                vartype = svt_string;
-            }
-            break;
-
-        case svt_code:
-            break;
-
+            case svt_code:
+                /* FIXME: To be implemented */
+                break;
+        }
+        vartype = svt_string;
     }
 
     /* FIXME: No code variables */
@@ -154,16 +159,16 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
         return err_BufferOverflow;
     }
 
-    if (datalen < var->value.datalen)
+    if (datalen < vardatalen)
     {
         /* Not enough memory for the string */
-        r->r[2] = ~var->value.datalen;
+        r->r[2] = ~vardatalen;
         return err_BufferOverflow;
     }
 
     memcpy(data, vardata, vardatalen);
     r->r[2] = vardatalen;
-    r->r[3] = (int)var->name;
+    r->r[3] = (int)varname;
     r->r[4] = vartype;
 
     return NULL;
@@ -198,12 +203,15 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     switch (type)
     {
         case svt_string:
-        case svt_macro:
             /* svt_string: Should be passed through GSTrans */
             /* svt_macro: Same as literal on store; GSTrans'd on read */
             err = transform_gstrans(0, (char *)data, (char **)&data, (uint32_t *)&datalen);
             if (err)
                 return err;
+            break;
+
+        case svt_macro:
+            /* Macros are only GSTrans'd on read, not on set */
             break;
 
         case svt_number:

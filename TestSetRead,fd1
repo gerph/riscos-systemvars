@@ -57,7 +57,7 @@ IF !buffer% <> 16 THENPRINT "Error: Value returned was wrong":fail%=TRUE
 REM Type 3 test (numbers, read as string)
 PRINT '"Test that setting variable with EvaluateExpression (type 3) works with numbers read as string"
 SYS "SystemVars_SetVarVal", "MyEval", "8 * 2", 14, 0, 3
-SYS "SystemVars_ReadVarVal", "MyEval", buffer%, 256, 0, 4 TO ,,len,context,type
+SYS "SystemVars_ReadVarVal", "MyEval", buffer%, 256, 0, 3 TO ,,len,context,type
 PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
 IF type = 1 THEN
     PRINT "Number: ";!buffer%
@@ -84,6 +84,33 @@ ENDIF
 IF len <> 4 THENPRINT "Error: Length was wrong":fail%=TRUE
 IF type <> 1 THENPRINT "Error: Type returned was wrong":fail%=TRUE
 IF !buffer% <> 42 THENPRINT "Error: Value returned was wrong":fail%=TRUE
+
+REM Type 2 test
+PRINT '"Test that setting variable as a macro works"
+SYS "SystemVars_SetVarVal", "MyMacro", "Your number is <Sys$Random>", 27, 0, 2
+SYS "SystemVars_ReadVarVal", "MyMacro", buffer%, 256, 0, 3 TO ,,len,context,type
+PRINT "Len: ";len; "    Context: ";context;"   Type: ";type
+IF type = 1 THEN
+    PRINT "Number: ";!buffer%
+ELSE
+    ?(buffer%+len)=13
+    PRINT "String: ";$buffer%
+ENDIF
+REM Disabled the length check because this won't work with the build service (see below).
+REM IF len <> 25 THENPRINT "Error: Length was wrong":fail%=TRUE
+IF type <> 0 THENPRINT "Error: Type returned was wrong":fail%=TRUE
+IF LEFT$($buffer%, 11) <> "Your number" THENPRINT "Error: Value returned was wrong":fail%=TRUE
+
+first$=$buffer%
+REM Now check that it really is a macro, expanding each time.
+SYS "SystemVars_ReadVarVal", "MyMacro", buffer%, 256, 0, 3 TO ,,len,context,type
+?(buffer%+len)=13
+second$ = $buffer%
+PRINT "Second read of string gave: ";second$
+REM Disabled this test for now, because Sys$Random isn't present in the release of build service.
+REM When it's enabled on the service, we can use this.
+REM Note: Sys$Random should also be allocated.
+REMIF first$ = second$ THENPRINT "Error: Value did not change between calls":fail%=TRUE
 
 PRINT
 IF fail% THEN

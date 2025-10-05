@@ -4,6 +4,9 @@
 
 #include "VersionNum"
 
+#include "riscos/NewErrors.h"
+
+
 ; If you declare module-is-runnable the module will be entered at the main()
 ; function in user mode (ie like a normal C program).
 ; You will probably never need this field.
@@ -65,7 +68,7 @@ error-identifiers: err_BadName("BadName:Bad system variable name"),
                    err_BadType("BadType:Bad system variable type"),
                    err_NoMemory("NoMemory:Not enough memory for system variable"),
                    err_NoSuchVariable("NoSuchVariable:System variable not found"),
-                   err_BufferOverflow("BufferOverflow:Buffer overflow"),
+                   err_BufferOverflow(ErrorNumber_BuffOverflow, "BufferOverflow:Buffer overflow"),
                    err_InternalError("InternalError:SysVar: Internal consistency fault")
 
 ; When the module is initialised, this routine will be entered. You should

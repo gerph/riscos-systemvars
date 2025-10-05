@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "kernel.h"
 #include "riscos/NewErrors.h"
@@ -16,6 +17,18 @@
 #include "os.h"
 #include "modhead.h"
 #include "transform.h"
+
+
+/* Define this to debug this file */
+//#define DEBUG
+
+
+#ifdef DEBUG
+#define dprintf if (1) printf
+#else
+#define dprintf if (0) printf
+#endif
+
 
 #define BUFFER_INITIAL      (16)
 #define BUFFER_EXTENSION    (16)
@@ -31,7 +44,6 @@ char *transform_buffer = NULL;
                 data-> the input string to GSTrans
                 outputp-> where store the newly allocated buffer
                 outputlenp = where the length of the data will be stored
-                bytesreadp-> where the length read will be stored.
  Returns:       pointer to an error, or NULL if successful
  ******************************************************************/
 _kernel_oserror *transform_gstrans(uint32_t flags, const char *data,
@@ -45,34 +57,44 @@ _kernel_oserror *transform_gstrans(uint32_t flags, const char *data,
         if (transform_buffer == NULL)
             return err_NoMemory;
     }
+
+    dprintf("transform_gstrans: data = %s\n", data);
+
     while (1)
     {
         _kernel_oserror *err;
+        dprintf("  transforming with buffer length %i\n", transform_buflen);
         err = os_gstrans(0, (const char *)data, transform_buffer, transform_buflen, &wrote);
         if (err)
         {
+            dprintf("  there was an error: %s\n", err->errmess);
             if (err->errnum == ErrorNumber_BuffOverflow)
             {
                 /* Need to extend the buffer and try again */
                 int newbuflen = transform_buflen + BUFFER_EXTENSION;
-                char *newbuf = realloc(transform_buffer, newbuflen);
+                char *newbuf;
+                dprintf("  buffer extending to %i bytes\n", newbuflen);
+                newbuf = realloc(transform_buffer, newbuflen);
                 if (newbuf == NULL)
                 {
                     /* Ran out of memory; fatal */
                     return err_NoMemory;
                 }
+                dprintf("  successful\n");
                 transform_buffer = newbuf;
                 transform_buflen = newbuflen;
             }
             else
             {
                 /* Error in GSTrans, so we give up */
+                dprintf("  real error, returning\n");
                 return err;
             }
         }
         else
         {
             /* No error - we got our string */
+            dprintf("  Transform was successful, returning %i bytes: %.*s\n", wrote, wrote, transform_buffer);
             break;
         }
     }
@@ -88,8 +110,7 @@ _kernel_oserror *transform_gstrans(uint32_t flags, const char *data,
  Parameters:    data-> the input string to EvaluateExpression
                 datalen = the length of the input string
                 outputp-> where store the newly allocated buffer
-                outputlenp = where the length of the data will be stored
-                bytesreadp-> where the length read will be stored (or the number if is_number is true)
+                outputlenp-> where the length read will be stored (or the number if is_number is true)
                 is_numberp-> where to store whether this is a number or string (bytesreadp will hold the number)
  Returns:       pointer to an error, or NULL if successful
  ******************************************************************/

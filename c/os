@@ -10,6 +10,8 @@
 #include "swis.h"
 
 #include "os.h"
+#include "modhead.h"
+#include "riscos/NewErrors.h"
 
 
 /*************************************************** Gerph *********
@@ -33,7 +35,17 @@ _kernel_oserror *os_gstrans(uint32_t flags,
 {
     _kernel_oserror *err;
     uint32_t size_and_flags = (uint32_t)size | flags;
-    err = _swix(OS_GSTrans, _INR(0,2)|_OUT(2), s, output, size_and_flags, wrotep);
+    uint32_t oflags;
+#ifdef __riscos64
+#error Not yet implemented
+#else
+    err = _swix(OS_GSTrans, _INR(0,2)|_OUT(2)|_OUT(_FLAGS), s, output, size_and_flags, wrotep, &oflags);
+    if (oflags & _C)
+    {
+        /* C set means we overflowed */
+        err = err_BufferOverflow;
+    }
+#endif
     if (err)
         return err;
     return NULL;
