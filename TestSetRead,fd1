@@ -1,6 +1,8 @@
 REM>TestSetRead
 REM Testing that the setting of variables and their reading works.
 
+ON ERROR ERROR EXT ERR, REPORT$+" at line "+STR$ERL:END
+
 DIM buffer% 256
 
 fail% = FALSE
@@ -111,6 +113,22 @@ REM Disabled this test for now, because Sys$Random isn't present in the release 
 REM When it's enabled on the service, we can use this.
 REM Note: Sys$Random should also be allocated.
 REMIF first$ = second$ THENPRINT "Error: Value did not change between calls":fail%=TRUE
+
+
+REM Test that enumeration works.
+PRINT '"Test that the enumeration works"
+context% = 0
+count%=0
+REPEAT
+    SYS "XSystemVars_ReadVarVal", "*", buffer%, 256, context%, 3 TO ,,len,context%,type;flags%
+    IF (flags% AND 1) = 0 THEN
+        ?(buffer%+len)=13
+        SYS "OS_IntOn", context% TO var$
+        PRINT "Got variable: ";var$; "    value: ";$buffer%
+        count%+=1
+    ENDIF
+UNTIL (flags% AND 1) = 1 OR count% > 10
+IF count% > 10 THENPRINT "Error: Iterated too many times":fail%=TRUE
 
 PRINT
 IF fail% THEN

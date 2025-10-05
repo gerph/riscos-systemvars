@@ -40,6 +40,7 @@ CDEFINES   =
 
 # Objects to build, using the format o.<name> (will be varied for build type)
 OBJS       = o.modhead \
+             o.wildcard \
 			 o.csstring \
 			 o.os \
 			 o.transform \

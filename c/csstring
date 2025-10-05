@@ -5,6 +5,7 @@
  * Date:        21 Sep 2025
  ******************************************************************/
 
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -43,4 +44,20 @@ char *csstrdup(csstring_t cs)
     memcpy(newstr, cs, len);
     newstr[len] = '\0';
     return newstr;
+}
+
+/*************************************************** Gerph *********
+ Function:      cswildcarded
+ Description:   Check if the Ctrlspc-terminated String is wildcarded
+ Parameters:    cs-> the ctrlspc terminated string
+ Returns:       true if wildcarded, false if not
+ ******************************************************************/
+bool cswildcarded(csstring_t cs)
+{
+    for (;*cs > ' ';cs++)
+    {
+        if (*cs == '?' || *cs == '*')
+            return true;
+    }
+    return false;
 }

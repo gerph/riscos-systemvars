@@ -8,6 +8,8 @@
 #ifndef CSSTRING_H
 #define CSSTRING_H
 
+#include <stdbool.h>
+
 typedef char *csstring_t;       /* Control/Space terminated string */
 
 /*************************************************** Gerph *********
@@ -26,6 +28,15 @@ int csstrlen(csstring_t cs);
  Returns:       new string pointer, or NULL if failed
  ******************************************************************/
 char *csstrdup(csstring_t cs);
+
+
+/*************************************************** Gerph *********
+ Function:      cswildcarded
+ Description:   Check if the Ctrlspc-terminated String is wildcarded
+ Parameters:    cs-> the ctrlspc terminated string
+ Returns:       true if wildcarded, false if not
+ ******************************************************************/
+bool cswildcarded(csstring_t cs);
 
 
 #endif

@@ -1,0 +1,25 @@
+/*******************************************************************
+ * File:     wildcard
+ * Purpose:  Wildcard matching for SystemVars
+ * Author:   Justin Fletcher
+ * Date:     14 Jun 2007
+ ******************************************************************/
+
+#ifndef WILDCARD_H
+#define WILDCARD_H
+
+#include "csstring.h"
+
+/*************************************************** Gerph *********
+ Function:     wildmatch_sysvars
+ Description:  Check whether we match a wildcard (case insensitive,
+               for systemvars)
+ Parameters:   wild-> the wildcard to match with, terminated by
+                      control characters or space
+               str-> the string to match, terminated by control
+                     chars or space
+ Returns:      1 if matched, 0 if no match
+ ******************************************************************/
+int wildmatch_sysvars(csstring_t wild, csstring_t str);
+
+#endif

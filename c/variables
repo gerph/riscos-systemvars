@@ -15,7 +15,7 @@
 
 #include "csstring.h"
 #include "variables.h"
-
+#include "wildcard.h"
 
 /* Define this to debug this file */
 //#define DEBUG
@@ -154,13 +154,53 @@ sysvar_t *sysvar_read(csstring_t   cs,
                       char        *context)
 {
     sysvar_t *cur;
-    for (cur=sysvars; cur; cur=cur->next)
+    bool wildcarded = cswildcarded(cs);
+    if (wildcarded)
     {
-        /* FIXME: I'm ignoring wildcards right now */
-        int match = sysvar_matchname(cur->name, cs);
-        dprintf("Checking %s against %s gave %i\n", cur->name, cs, match);
-        if (match == 0)
-            return cur;
+        for (cur=sysvars; cur; cur=cur->next)
+        {
+            if (context != NULL)
+            {
+                int found = sysvar_matchname(cur->name, context);
+                dprintf("Enumeration check: want=%s, current=%s, comparison=%i\n", context, cur->name, found);
+                if (found == 0)
+                {
+                    /* This was the variable they had last, so skip it and return the next */
+                    context = NULL;
+                    dprintf("  matched, next item will be returned\n");
+                    continue;
+                }
+                if (found < 0)
+                {
+                    /* We haven't reached the last value yet, so continue searching */
+                    dprintf("  too early, continuing\n");
+                    continue;
+                }
+                /* We are beyond the name they supplied, so return this variable */
+            }
+
+            {
+                int match = wildmatch_sysvars(cs, cur->name);
+                dprintf("Checking %s against %s gave %i\n", cur->name, cs, match);
+                if (match == 1)
+                    return cur;
+            }
+        }
+    }
+    else
+    {
+        if (context != NULL)
+            return NULL; /* They wanted to start somewhere - so this is not the first call, and we must stop immediately */
+
+        dprintf("Non-wildcarded search for %s\n", cs);
+
+        for (cur=sysvars; cur; cur=cur->next)
+        {
+            int match = sysvar_matchname(cur->name, cs);
+            dprintf("Checking %s against %s gave %i\n", cur->name, cs, match);
+            if (match == 0)
+                return cur;
+        }
     }
     return NULL;
 }
@@ -201,7 +241,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
     if (sysvar->type != type)
     {
         if (sysvar->type == svt_code ||
-            type = svt_code)
+            type == svt_code)
         {
             /* Changing code variables not supported yet */
             return sve_badtype;
