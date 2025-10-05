@@ -35,12 +35,17 @@ _kernel_oserror *os_gstrans(uint32_t flags,
 {
     _kernel_oserror *err;
     uint32_t size_and_flags = (uint32_t)size | flags;
-    uint32_t oflags;
 #ifdef __riscos64
-#error Not yet implemented
+    uint32_t is_valid = 0;
+    err = _swix(OS_GSTrans, _INR(0,2)|_OUTR(1, 2), s, output, size_and_flags, is_valid, wrotep);
+    if (err == NULL && !is_valid)
+    {
+        err = err_BufferOverflow;
+    }
 #else
+    uint32_t oflags;
     err = _swix(OS_GSTrans, _INR(0,2)|_OUT(2)|_OUT(_FLAGS), s, output, size_and_flags, wrotep, &oflags);
-    if (oflags & _C)
+    if (err == NULL && oflags & _C)
     {
         /* C set means we overflowed */
         err = err_BufferOverflow;
