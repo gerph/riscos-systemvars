@@ -197,6 +197,17 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
 
     /* FIXME: We should apply value length checks like in create */
 
+    /* If the variable type has changed, we need to be careful */
+    if (sysvar->type != type)
+    {
+        if (sysvar->type == svt_code ||
+            type = svt_code)
+        {
+            /* Changing code variables not supported yet */
+            return sve_badtype;
+        }
+    }
+
     /* The context has been set to the variable name */
     *contextp = sysvar->name;
 
