@@ -63,13 +63,15 @@ error-base: &840000
 ; so manually in your C code, and is less likely to pollute error number
 ; space. The number is optional, and if omitted will be allocated from the
 ; error chunk.
-error-identifiers: err_BadName("BadName:Bad system variable name"),
-                   err_BadLength("BadLength:Bad system variable length"),
-                   err_BadType("BadType:Bad system variable type"),
-                   err_NoMemory("NoMemory:Not enough memory for system variable"),
-                   err_NoSuchVariable("NoSuchVariable:System variable not found"),
+error-identifiers: err_BadName(ErrorNumber_BadVarNam, "BadName:Bad system variable name"),
+                   err_BadLength(ErrorNumber_VarTooLong, "BadLength:Bad system variable length"),
+                   err_BadType(ErrorNumber_BadVarType, "BadType:Bad system variable type"),
+                   err_NoMemory(ErrorNumber_VarNoRoom, "NoMemory:Not enough memory for system variable"),
+                   err_NoSuchVariable(ErrorNumber_VarCantFind, "NoSuchVariable:System variable not found"),
                    err_BufferOverflow(ErrorNumber_BuffOverflow, "BufferOverflow:Buffer overflow"),
                    err_InternalError("InternalError:SysVar: Internal consistency fault")
+
+; ErrorNumber_BadMacVal - "Bad macro value" - FIXME: I am not sure what could be bad. Look into this.
 
 ; When the module is initialised, this routine will be entered. You should
 ; be very careful to initialise your module safely. If anything fails, you
@@ -132,7 +134,11 @@ swi-decoding-table: SystemVars \
 ;   private-word: <register> Private word register
 ;   carry-capable:           Veneer is capable of handling returning of the
 ;                            carry flag
-;generic-veneers: Veneer_Entry/Veneer_Handler
+#ifdef OS_SWIS
+generic-veneers: \
+        Entry_ReadVarVal/OSSWI_ReadVarVal,
+        Entry_SetVarVal/OSSWI_SetVarVal
+#endif
 
 ; IRQ veneers are the old name for vector-handlers. Use vector-handlers in
 ; preference to irq-handlers.

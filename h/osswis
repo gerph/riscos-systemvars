@@ -1,0 +1,29 @@
+/*******************************************************************
+ * File:        osswis
+ * Purpose:     Claim the SWIs in the OS that we wish to handle
+ * Author:      Gerph
+ * Date:        27 Aug 2025
+ ******************************************************************/
+
+#ifndef OSSWIS_H
+#define OSSWIS_H
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "kernel.h"
+
+typedef void (*generic_veneer)(void);
+
+/*************************************************** Gerph *********
+ Function:      osswi_claim
+ Description:   Claim an OS_* SWI
+ Parameters:    claim = 1 to claim, 0 to release
+                swi = SWI number
+                func-> the generic veneer to call
+                pw = the private word to pass
+ Returns:       pointer to error, or NULL if ok
+ ******************************************************************/
+_kernel_oserror *osswi_claim(bool claim, int32_t swi, generic_veneer func, void *pw);
+
+#endif
