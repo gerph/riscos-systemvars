@@ -132,9 +132,6 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     {
         r->r[2] = 0;
         dprintf("  not found\n");
-        dprintf("  no such variable = %p\n", err_NoSuchVariable);
-        if (err_NoSuchVariable > (_kernel_oserror*)(1llu<<32))
-            *(int*)0x4000 = 0;
         return err_NoSuchVariable;
     }
 
