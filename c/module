@@ -18,6 +18,16 @@
 #include "transform.h"
 #include "codevars.h"
 
+/* Define this to debug this file */
+#define DEBUG
+
+
+#ifdef DEBUG
+#define dprintf if (1) printf
+#else
+#define dprintf if (0) printf
+#endif
+
 
 #ifdef OS_SWIS
 #include "osswis.h"
@@ -115,10 +125,13 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     sysvartype_t vartype;
     const char *varname;
 
+    dprintf("ReadVarVal: %s\n", cs);
+
     var = sysvar_read(cs, context);
     if (var == NULL)
     {
         r->r[2] = 0;
+        dprintf("  not found\n");
         return err_NoSuchVariable;
     }
 
@@ -173,6 +186,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     {
         /* Check for existence - documented in PRM*/
         r->r[2] = ~vardatalen;
+        dprintf("  buffer overflow\n");
         return err_BufferOverflow;
     }
 
@@ -180,6 +194,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     {
         /* Not enough memory for the string */
         r->r[2] = ~vardatalen;
+        dprintf("  buffer overflow\n");
         return err_BufferOverflow;
     }
 
@@ -188,6 +203,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     r->r[3] = (int)varname;
     r->r[4] = vartype;
 
+    dprintf("  read value '%.*s'\n", vardatalen, vardata);
     return NULL;
 }
 
@@ -217,10 +233,14 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     sysvarerror_t sverr;
     uint32_t datanumber;
 
+    dprintf("SetVarVal '%s'\n", cs);
+
     if (datalen & (1u<<31))
     {
         /* This is a deletion operation */
-        bool deleted = sysvar_delete(cs);
+        bool deleted;
+        dprintf("  is a delete\n");
+        deleted = sysvar_delete(cs);
         if (deleted)
             return NULL;
         return err_NoSuchVariable;
@@ -283,6 +303,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     }
 
     sverr = sysvar_update_or_create(cs, data, datalen, type, &context);
+    dprintf("  Returned with error %i\n", sverr);
     switch (sverr)
     {
         case SVE_OK:
@@ -307,6 +328,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     }
 
     r->r[3] = (int)context;
+    dprintf("  set ok\n", sverr);
 
     return NULL;
 }

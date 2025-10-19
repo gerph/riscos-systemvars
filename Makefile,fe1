@@ -29,7 +29,7 @@ INCLUDES   =
 
 # Space separated list of libraries to link against, eg C:LibName.o.libLibName
 # (${CLIB} is implicit, unless NOCLIB = yes)
-LIBS       = C:Asm.o.libAsm
+LIBS       =
 
 # Options, specified with a + or -
 OPTS       =
@@ -50,6 +50,13 @@ OBJS       = o.modhead \
 			 o.transform \
 			 o.variables \
 			 o.module
+
+ifeq (${BUILD64},1)
+OBJS += o.callx64 \
+		o.call64
+else
+LIBS += C:Asm.o.libAsm
+endif
 
 FORTIFY    = yes
 
