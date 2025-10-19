@@ -37,8 +37,24 @@ jobs:
       - RMLoad rm32.SystemVars
 
       - echo
+      - echo *** Re-assert the BASIC run type variable ***
+      - "Set Alias$@RunType_FD1 Basic -quit |\"%0|\" %*1"
+
+      - echo
       - echo *** Simple test of the module ***
-      - /TestSetRead
+      - /tests.TestSetRead
+
+      - echo
+      - echo *** Re-assert the Filetypes variables ***
+      - X Rmreinit FileTypes
+
+      - echo
+      - echo *** Load the 'defaults' module ***
+      - RMLoad tests.SystemVarsDefaults32
+
+      - echo
+      - echo *** Check that OSSWI enumeration works ***
+      - Show
 
       - echo
       - echo *** Kill the module ***

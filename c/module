@@ -18,6 +18,13 @@
 #include "transform.h"
 
 
+#ifdef OS_SWIS
+#include "osswis.h"
+
+uint32_t registered = 0;
+void register_osswis(void *pw, bool reg);
+#endif
+
 /***************************************************************************
  * Function:     Mod_Init
  * Description:  Initialise the module, setting up vectors, callbacks and
@@ -33,6 +40,9 @@
 _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
 {
     Fortify_EnterScope();
+#ifdef OS_SWIS
+    register_osswis(pw, true);
+#endif
     printf("Module SystemVars initialised\n");
     return NULL;
 }
@@ -53,6 +63,9 @@ _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
 _kernel_oserror *Mod_Final(int fatal, int podule_base, void *pw)
 {
     printf("Module SystemVars dying\n");
+#ifdef OS_SWIS
+    register_osswis(pw, false);
+#endif
     sysvar_final();
     transform_final();
     Fortify_LeaveScope();
@@ -332,4 +345,56 @@ _kernel_oserror *Cmd_SystemVarsList(const char *arg_string, int argc,
     sysvars_dump();
     return NULL;
 }
+#endif
+
+
+
+#ifdef OS_SWIS
+/* OS SWIs */
+
+#define OSSWI(entry, call) \
+_kernel_oserror * entry (_kernel_swi_regs *r, void *pw) \
+{ \
+    return call; \
+}
+
+OSSWI(OSSWI_ReadVarVal, SWI_ReadVarVal(0, r, pw))
+OSSWI(OSSWI_SetVarVal, SWI_SetVarVal(0, r, pw))
+
+
+/*************************************************** Gerph *********
+ Function:      register_osswis
+ Description:   Register all the OS_* SWIs that we provide (or deregister
+ Parameters:    pw = the module private word
+                reg = true if we're registering, false if we deregister
+ Returns:       none
+ ******************************************************************/
+void register_osswis(void *pw, bool reg)
+{
+    _kernel_oserror *err;
+    int n = 0;
+
+#define REGISTER(swi, entry) \
+        if (reg) \
+        { \
+            err = osswi_claim(true, swi, entry, pw); \
+            if (!err) \
+            { \
+                registered |= (1u<<n); \
+            } \
+        } \
+        else \
+        { \
+            if (registered & (1u<<n)) \
+            { \
+                osswi_claim(false, swi, entry, pw); \
+                registered &= ~(1u<<n); \
+            } \
+        } \
+        n++;
+
+    REGISTER(OS_ReadVarVal, Entry_ReadVarVal);
+    REGISTER(OS_SetVarVal, Entry_SetVarVal);
+}
+
 #endif

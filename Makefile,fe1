@@ -32,8 +32,10 @@ INCLUDES   =
 LIBS       =
 
 # Options, specified with a + or -
-OPTS       = +MODULE_SWIS
+OPTS       =
+OPTS      += +MODULE_SWIS
 OPTS      += +DEBUG_COMMANDS
+OPTS      += +OS_SWIS
 
 # Space separated list of defines to set, eg -DDEBUG
 CDEFINES   =
@@ -42,6 +44,7 @@ CDEFINES   =
 OBJS       = o.modhead \
              o.wildcard \
 			 o.csstring \
+			 o.osswis \
 			 o.os \
 			 o.transform \
 			 o.variables \
