@@ -24,8 +24,11 @@ typedef enum sysvartype_e {
     svt_number = 1,
     svt_macro = 2,
     svt_expanded = 3,
-    svt_literal = 4,
+    svt_literal = 4
+#ifndef NO_CODE_VARS
+    ,
     svt_code = 16
+#endif
 } sysvartype_t;
 
 typedef struct sysvar_s sysvar_t;

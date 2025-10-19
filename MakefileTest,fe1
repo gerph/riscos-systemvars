@@ -27,6 +27,7 @@ TYPE       = aif
 INCLUDES   =
 
 OPTS      += +DEBUG_COMMANDS
+OPTS      += +NO_CODE_VARS
 
 FORTIFY    = no
 

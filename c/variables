@@ -107,11 +107,13 @@ sysvarerror_t sysvar_create(csstring_t   cs,
     sysvar->value.datalen = datalen;
     sysvar->type = type;
 
+#ifndef NO_CODE_VARS
     if (type == svt_code)
     {
         /* We need to issue SynchroniseCodeAreas */
         os_synchronisecodeareas((_addr_t)newdata, (_addr_t)(newdata + datalen));
     }
+#endif
 
     /* Link to the list */
     {
@@ -337,6 +339,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
     /* If the variable type has changed, we need to be careful */
     if (sysvar->type != type)
     {
+#ifndef NO_CODE_VARS
         if (type == svt_code)
         {
             /* They want to set a code variable, and a non-code code variable exists */
@@ -361,11 +364,13 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
                 return SVE_BADTYPE;
             }
         }
+#endif
     }
 
     /* The context has been set to the variable name */
     *contextp = sysvar->name;
 
+#ifndef NO_CODE_VARS
     if (sysvar->type == svt_code)
     {
         /* This is a code variable we are setting */
@@ -374,6 +379,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
         return err ? SVE_FROM_OSERROR(err) : SVE_OK;
     }
     else
+#endif
     {
         uint8_t *newdata;
         /* Note: This method means that we won't reallocate memory if the string gets shorter.
