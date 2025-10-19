@@ -36,13 +36,19 @@ struct sysvar_s {
     sysvartype_t     type;
 };
 
-typedef enum sysvarerror_e {
-    sve_ok = 0,
-    sve_badname,
-    sve_badlength,
-    sve_nomemory,
-    sve_badtype
-} sysvarerror_t;
+
+typedef uint32_t sysvarerror_t;
+
+#define SVE_OK          (0)
+#define SVE_BADNAME     (1)
+#define SVE_BADLENGTH   (2)
+#define SVE_NOMEMORY    (3)
+#define SVE_BADTYPE     (4)
+#define SVE_LAST        (5)
+
+#define SVE_IS_OSERROR(sve) ((sve > SVE_LAST) ? true : false)
+#define SVE_TO_OSERROR(sve) (_kernel_oserror *)(sve)
+#define SVE_FROM_OSERROR(err) (sysvarerror_t)(err)
 
 
 /*************************************************** Gerph *********

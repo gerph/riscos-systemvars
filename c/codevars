@@ -7,23 +7,82 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "kernel.h"
+#include "Asm/callx.h"
 
 #include "codevars.h"
+
+/* Define this to debug this file */
+//#define DEBUG
+
+
+#ifdef DEBUG
+#define dprintf if (1) printf
+#else
+#define dprintf if (0) printf
+#endif
+
+
+typedef uint32_t _inst_t;
+
+typedef struct codevar_s {
+    _inst_t     var_write;
+    _inst_t     var_read;
+} codevar_t;
+
 
 /*************************************************** Gerph *********
  Function:      codevar_read
  Description:   Read the value of a code variable and it's length
- Parameters:    codevar-> the code variable to run
+ Parameters:    vardata-> the code variable to run
                 data-> where to store the variable data
                 datalen-> where to store the variable data length
  Returns:       pointer to an error, or NULL if ok
  ******************************************************************/
 _kernel_oserror *codevar_read(void *vardata, uint8_t **data, uint32_t *datalen)
 {
-    *data = (uint8_t*)"HELLO";
-    *datalen = 5;
-    return NULL;
+    codevar_t *codevar = (codevar_t *)vardata;
+    _kernel_oserror *err = NULL;
+
+    dprintf("Reading code variable...\n");
+    err = _callx(&codevar->var_read, NULL, _OUT(0)|_OUT(2), data, datalen);
+    if (err)
+    {
+        dprintf("  got error: %s\n", err->errmess);
+    }
+    else
+    {
+        dprintf("  read '%.*s'\n", *datalen, *data);
+    }
+    return err;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      codevar_write
+ Description:   Write the value to a code variable
+ Parameters:    vardata-> the code variable to run
+                data-> the data we are storing
+                datalen = the data length
+ Returns:       pointer to an error, or NULL if ok
+ ******************************************************************/
+_kernel_oserror *codevar_write(void *vardata, uint8_t *data, uint32_t datalen)
+{
+    codevar_t *codevar = (codevar_t *)vardata;
+    _kernel_oserror *err = NULL;
+
+    dprintf("Writing code variable '%.*s'\n", datalen, data);
+    err = _callx(&codevar->var_write, NULL, _INR(1, 2), data, datalen);
+    if (err)
+    {
+        dprintf("  got error: %s\n", err->errmess);
+    }
+    else
+    {
+        dprintf("  ok\n");
+    }
+    return err;
 }
 

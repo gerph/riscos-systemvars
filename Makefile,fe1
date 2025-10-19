@@ -29,7 +29,7 @@ INCLUDES   =
 
 # Space separated list of libraries to link against, eg C:LibName.o.libLibName
 # (${CLIB} is implicit, unless NOCLIB = yes)
-LIBS       =
+LIBS       = C:Asm.o.libAsm
 
 # Options, specified with a + or -
 OPTS       =

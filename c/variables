@@ -17,6 +17,7 @@
 #include "variables.h"
 #include "wildcard.h"
 #include "os.h"
+#include "codevars.h"
 
 /* Define this to debug this file */
 //#define DEBUG
@@ -138,7 +139,7 @@ sysvarerror_t sysvar_create(csstring_t   cs,
             last->next = sysvar;
     }
 
-    return sve_ok;
+    return SVE_OK;
 
 
 no_memory_2:
@@ -146,7 +147,7 @@ no_memory_2:
 no_memory_1:
     free(sysvar);
 no_memory_0:
-    return sve_nomemory;
+    return SVE_NOMEMORY;
 }
 
 
@@ -329,17 +330,43 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
     /* If the variable type has changed, we need to be careful */
     if (sysvar->type != type)
     {
-        if (sysvar->type == svt_code ||
-            type == svt_code)
+        if (type == svt_code)
         {
-            /* Changing code variables not supported yet */
-            return sve_badtype;
+            /* They want to set a code variable, and a non-code code variable exists */
+            /* Delete the old variable */
+            if (!sysvar_delete(cs))
+            {
+                /* Not sure why we would fail to delete, but if we do, we just report bad type */
+                return SVE_BADTYPE;
+            }
+            /* Create the code variable */
+            *contextp = NULL;
+            return sysvar_create(cs, data, datalen, type);
+        }
+
+        if (sysvar->type == svt_code)
+        {
+            /* It was a code variable, and now they're setting something else */
+            /* Only setting strings are supported */
+            if (type != svt_string)
+            {
+                /* Cannot set a code variable value to anyhting but a string */
+                return SVE_BADTYPE;
+            }
         }
     }
 
     /* The context has been set to the variable name */
     *contextp = sysvar->name;
 
+    if (sysvar->type == svt_code)
+    {
+        /* This is a code variable we are setting */
+        _kernel_oserror *err;
+        err = codevar_write(sysvar->value.data, data, datalen);
+        return err ? SVE_FROM_OSERROR(err) : SVE_OK;
+    }
+    else
     {
         uint8_t *newdata;
         /* Note: This method means that we won't reallocate memory if the string gets shorter.
@@ -351,7 +378,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
         {
             newdata = malloc(datalen + 1);
             if (newdata == NULL)
-                return sve_nomemory;
+                return SVE_NOMEMORY;
             free(sysvar->value.data);
         }
         else
@@ -366,7 +393,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
         sysvar->value.datalen = datalen;
         sysvar->type = type;
     }
-    return sve_ok;
+    return SVE_OK;
 }
 
 

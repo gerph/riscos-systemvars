@@ -285,22 +285,24 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     sverr = sysvar_update_or_create(cs, data, datalen, type, &context);
     switch (sverr)
     {
-        case sve_ok:
+        case SVE_OK:
             break;
 
-        case sve_badname:
+        case SVE_BADNAME:
             return err_BadName;
 
-        case sve_badlength:
+        case SVE_BADLENGTH:
             return err_BadLength;
 
-        case sve_nomemory:
+        case SVE_NOMEMORY:
             return err_NoMemory;
 
-        case sve_badtype:
+        case SVE_BADTYPE:
             return err_BadType;
 
         default:
+            if (SVE_IS_OSERROR(sverr))
+                return SVE_TO_OSERROR(sverr);
             return err_InternalError;
     }
 

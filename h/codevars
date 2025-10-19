@@ -22,4 +22,15 @@
  ******************************************************************/
 _kernel_oserror *codevar_read(void *vardata, uint8_t **data, uint32_t *datalen);
 
+
+/*************************************************** Gerph *********
+ Function:      codevar_write
+ Description:   Write the value to a code variable
+ Parameters:    vardata-> the code variable to run
+                data-> the data we are storing
+                datalen = the data length
+ Returns:       pointer to an error, or NULL if ok
+ ******************************************************************/
+_kernel_oserror *codevar_write(void *vardata, uint8_t *data, uint32_t datalen);
+
 #endif
