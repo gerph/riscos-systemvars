@@ -80,3 +80,25 @@ _kernel_oserror *os_evaluateexpression(const char *expr,
         return err;
     return NULL;
 }
+
+
+/*************************************************** Gerph *********
+ Function:      os_synchronisecodeareas
+ Description:   Ensure that the I-cache and D-cache are consistent after code modification
+ Parameters:    low = low address (use 0 for all memory)
+                high = high address (use 0 for all memory)
+ Returns:       pointer to error, or NULL if ok.
+ ******************************************************************/
+_kernel_oserror *os_synchronisecodeareas(_addr_t low, _addr_t high)
+{
+    _kernel_oserror *err;
+    if (low == 0 && high == 0)
+    {
+        err = _swix(OS_SynchroniseCodeAreas,_IN(0),0);
+    }
+    else
+    {
+        err = _swix(OS_SynchroniseCodeAreas,_INR(0, 2), 1<<0, low, high);
+    }
+    return err;
+}

@@ -44,6 +44,7 @@ CDEFINES   =
 OBJS       = o.modhead \
              o.wildcard \
 			 o.csstring \
+			 o.codevars \
 			 o.osswis \
 			 o.os \
 			 o.transform \

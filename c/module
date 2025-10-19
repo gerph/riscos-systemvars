@@ -16,6 +16,7 @@
 #include "variables.h"
 #include "os.h"
 #include "transform.h"
+#include "codevars.h"
 
 
 #ifdef OS_SWIS
@@ -126,7 +127,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     vardatalen = var->value.datalen;
     vartype = var->type;
 
-    if (type == svt_expanded)
+    if (type == svt_expanded || vartype == svt_code)
     {
         /* They want a string form - converted to a value to be read as a string */
         switch (vartype)
@@ -157,17 +158,20 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
                 break;
 
             case svt_code:
-                /* FIXME: To be implemented */
+                {
+                    _kernel_oserror *err;
+                    err = codevar_read(vardata, &vardata, &vardatalen);
+                    if (err)
+                        return err;
+                }
                 break;
         }
         vartype = svt_string;
     }
 
-    /* FIXME: No code variables */
-
     if (datalen & (1u<<31))
     {
-        /* Check for existance - documented in PRM*/
+        /* Check for existence - documented in PRM*/
         r->r[2] = ~vardatalen;
         return err_BufferOverflow;
     }
@@ -239,6 +243,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
         case svt_number:
             /* Is a 4 byte value (1 word) */
             /* In 64-bit OS this will remain as 4-bytes, and a new way of setting the value is required */
+            /* FIXME: Do we need to check the length */
             break;
 
         case svt_expanded:
@@ -268,7 +273,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             break;
 
         case svt_code:
-            /* FIXME: No code variables */
+            /* No conversion needed here for system variables */
             break;
 
         /* FIXME: Add svt_number64? */

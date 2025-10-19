@@ -12,6 +12,9 @@
 #include "swis.h"
 
 
+typedef uint32_t _addr_t;
+
+
 #define GSTRANS_NOQUOTES    (1u<<31)
 #define GSTRANS_NOESCAPES   (1u<<30)
 #define GSTRANS_SPACETERM   (1u<<29)
@@ -51,5 +54,15 @@ _kernel_oserror *os_evaluateexpression(const char *expr,
                                        char *buffer, int bufferlen,
                                        char **bufferoutp,
                                        int *bufferoutlenp);
+
+/*************************************************** Gerph *********
+ Function:      os_synchronisecodeareas
+ Description:   Ensure that the I-cache and D-cache are consistent after code modification
+ Parameters:    low = low address (use 0 for all memory)
+                high = high address (use 0 for all memory)
+ Returns:       pointer to error, or NULL if ok.
+ ******************************************************************/
+_kernel_oserror *os_synchronisecodeareas(_addr_t low, _addr_t high);
+
 
 #endif

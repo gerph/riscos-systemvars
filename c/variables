@@ -16,6 +16,7 @@
 #include "csstring.h"
 #include "variables.h"
 #include "wildcard.h"
+#include "os.h"
 
 /* Define this to debug this file */
 //#define DEBUG
@@ -102,6 +103,12 @@ sysvarerror_t sysvar_create(csstring_t   cs,
     sysvar->value.data = newdata;
     sysvar->value.datalen = datalen;
     sysvar->type = type;
+
+    if (type == svt_code)
+    {
+        /* We need to issue SynchroniseCodeAreas */
+        os_synchronisecodeareas((_addr_t)newdata, (_addr_t)(newdata + datalen));
+    }
 
     /* Link to the list */
     {
