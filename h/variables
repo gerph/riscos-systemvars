@@ -40,11 +40,12 @@ struct sysvar_s {
 typedef uint32_t sysvarerror_t;
 
 #define SVE_OK          (0)
-#define SVE_BADNAME     (1)
-#define SVE_BADLENGTH   (2)
-#define SVE_NOMEMORY    (3)
-#define SVE_BADTYPE     (4)
-#define SVE_LAST        (5)
+#define SVE_NOMEMORY    (1)
+#define SVE_BADNAME     (2)
+#define SVE_BADLENGTH   (3)
+#define SVE_BADPOINTER  (4)
+#define SVE_BADTYPE     (5)
+#define SVE_LAST        (6)
 
 #define SVE_IS_OSERROR(sve) ((sve > SVE_LAST) ? true : false)
 #define SVE_TO_OSERROR(sve) (_kernel_oserror *)(sve)

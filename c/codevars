@@ -14,9 +14,10 @@
 
 #include "os.h"
 #include "codevars.h"
+#include "modhead.h"
 
 /* Define this to debug this file */
-#define DEBUG
+//#define DEBUG
 
 
 #ifdef DEBUG
@@ -30,8 +31,8 @@ typedef uint32_t _inst_t;
 
 #ifdef __riscos64
 typedef struct codevar_s {
-    _addr_t     var_write;
-    _addr_t     var_read;
+    uint64_t    var_write;
+    uint64_t    var_read;
 } codevar_t;
 #else
 typedef struct codevar_s {
@@ -54,11 +55,16 @@ _kernel_oserror *codevar_read(void *vardata, uint8_t **data, uint32_t *datalen)
     codevar_t *codevar = (codevar_t *)vardata;
     _kernel_oserror *err = NULL;
     void *pw = NULL;
-    void *r0 = NULL;
 
     dprintf("Reading code variable...\n");
 #ifdef __riscos64
-    err = _callx(&codevar->var_read, NULL, _INR(0, 2)|_OUTR(0, 2), 0, 0, pw, &r0, data, datalen);
+    void *r0 = NULL;
+    if (codevar->var_read < (_addr_t)0x8000)
+    {
+        dprintf("  invalid code variable pointer: %p\n", codevar->var_read);
+        return err_BadPointer;
+    }
+    err = _callx(codevar->var_read, NULL, _INR(0, 2)|_OUTR(0, 2), 0, 0, pw, &r0, data, datalen);
     if (!err && r0 != NULL)
         err = (_kernel_oserror *)r0;
 #else
@@ -89,11 +95,13 @@ _kernel_oserror *codevar_write(void *vardata, uint8_t *data, uint32_t datalen)
     codevar_t *codevar = (codevar_t *)vardata;
     _kernel_oserror *err = NULL;
     void *pw = NULL;
-    void *r0 = NULL;
 
     dprintf("Writing code variable '%.*s'\n", datalen, data);
 #ifdef __riscos64
-    err = _callx(&codevar->var_read, NULL, _INR(0, 2)|_OUT(0), data, datalen, pw, &r0);
+    void *r0 = NULL;
+    if (codevar->var_write < (_addr_t)0x8000)
+        return err_BadPointer;
+    err = _callx(codevar->var_write, NULL, _INR(0, 2)|_OUT(0), data, datalen, pw, &r0);
     if (!err && r0 != NULL)
         err = (_kernel_oserror *)r0;
 #else

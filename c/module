@@ -19,7 +19,7 @@
 #include "codevars.h"
 
 /* Define this to debug this file */
-#define DEBUG
+//#define DEBUG
 
 
 #ifdef DEBUG
@@ -132,6 +132,9 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     {
         r->r[2] = 0;
         dprintf("  not found\n");
+        dprintf("  no such variable = %p\n", err_NoSuchVariable);
+        if (err_NoSuchVariable > (_kernel_oserror*)(1llu<<32))
+            *(int*)0x4000 = 0;
         return err_NoSuchVariable;
     }
 
@@ -309,14 +312,17 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
         case SVE_OK:
             break;
 
+        case SVE_NOMEMORY:
+            return err_NoMemory;
+
         case SVE_BADNAME:
             return err_BadName;
 
         case SVE_BADLENGTH:
             return err_BadLength;
 
-        case SVE_NOMEMORY:
-            return err_NoMemory;
+        case SVE_BADPOINTER:
+            return err_BadPointer;
 
         case SVE_BADTYPE:
             return err_BadType;

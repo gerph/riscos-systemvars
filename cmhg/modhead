@@ -65,6 +65,7 @@ error-base: &840000
 ; error chunk.
 error-identifiers: err_BadName(ErrorNumber_BadVarNam, "BadName:Bad system variable name"),
                    err_BadLength(ErrorNumber_VarTooLong, "BadLength:Bad system variable length"),
+                   err_BadPointer(ErrorNumber_VarTooLong, "BadValue:Bad variable pointer"),
                    err_BadType(ErrorNumber_BadVarType, "BadType:Bad system variable type"),
                    err_NoMemory(ErrorNumber_VarNoRoom, "NoMemory:Not enough memory for system variable"),
                    err_NoSuchVariable(ErrorNumber_VarCantFind, "NoSuchVariable:System variable not found"),
