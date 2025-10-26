@@ -9,7 +9,7 @@ _kernel_call
     MOV     x29, sp
     MOV     x11, x0                         // x11-> function
     MOV     x12, x1                         // x12 = private word
-    MOV     x10, x3                         // x10-> output register
+    MOV     x10, x3                         // x10-> output registers
 
 // Initialise registers
     CMP     x2, #0
@@ -36,7 +36,9 @@ _kernel_call_in_regs
     LDP     w8, w9, [x13], #8
 
 _kernel_call_in_done
+    STR     x10, [sp, #-16]!
     BLR     x11
+    LDR     x10, [sp], #16
 
     MOV     x12, #0
     BVC     _kernel_call_no_error

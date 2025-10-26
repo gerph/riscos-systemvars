@@ -46,11 +46,11 @@ typedef struct codevar_s {
  Function:      codevar_read
  Description:   Read the value of a code variable and it's length
  Parameters:    vardata-> the code variable to run
-                data-> where to store the variable data
-                datalen-> where to store the variable data length
+                datap-> where to store the variable data
+                datalenp-> where to store the variable data length
  Returns:       pointer to an error, or NULL if ok
  ******************************************************************/
-_kernel_oserror *codevar_read(void *vardata, uint8_t **data, uint32_t *datalen)
+_kernel_oserror *codevar_read(void *vardata, uint8_t **datap, uint32_t *datalenp)
 {
     codevar_t *codevar = (codevar_t *)vardata;
     _kernel_oserror *err = NULL;
@@ -64,11 +64,11 @@ _kernel_oserror *codevar_read(void *vardata, uint8_t **data, uint32_t *datalen)
         dprintf("  invalid code variable pointer: %p\n", codevar->var_read);
         return err_BadPointer;
     }
-    err = _callx(codevar->var_read, NULL, _INR(0, 2)|_OUTR(0, 2), 0, 0, pw, &r0, data, datalen);
+    err = _callx(codevar->var_read, NULL, _INR(0, 2)|_OUTR(0, 2), 0, 0, pw, &r0, datap, datalenp);
     if (!err && r0 != NULL)
         err = (_kernel_oserror *)r0;
 #else
-    err = _callx(&codevar->var_read, NULL, _OUT(0)|_OUT(2), data, datalen);
+    err = _callx(&codevar->var_read, NULL, _OUT(0)|_OUT(2), datap, datalenp);
 #endif
     if (err)
     {
@@ -76,7 +76,8 @@ _kernel_oserror *codevar_read(void *vardata, uint8_t **data, uint32_t *datalen)
     }
     else
     {
-        dprintf("  read '%.*s'\n", *datalen, *data);
+        dprintf("  read at %p, length %i\n", *datap, *datalenp);
+        dprintf("  read '%.*s'\n", *datalenp, *datap);
     }
     return err;
 }
