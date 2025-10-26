@@ -54,7 +54,7 @@ _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
 #ifdef OS_SWIS
     register_osswis(pw, true);
 #endif
-    printf("Module SystemVars initialised\n");
+    dprintf("Module SystemVars initialised\n");
     return NULL;
 }
 
@@ -73,7 +73,7 @@ _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
  **************************************************************************/
 _kernel_oserror *Mod_Final(int fatal, int podule_base, void *pw)
 {
-    printf("Module SystemVars dying\n");
+    dprintf("Module SystemVars dying\n");
 #ifdef OS_SWIS
     register_osswis(pw, false);
 #endif

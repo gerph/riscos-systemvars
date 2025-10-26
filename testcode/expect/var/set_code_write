@@ -1,0 +1,12 @@
+Create code variable: My$Variable
+SetVar:         My$Variable
+Type:           0
+Length:         7
+To Value:       MyValue
+Called write code variable: value=MyValue
+------
+Called read code variable
+Length:         8
+Type:           0
+Context:        My$Variable
+Value:          My value

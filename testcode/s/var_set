@@ -1,0 +1,336 @@
+
+        AREA    |Test$$Code|, CODE
+
+        GET     hdr.swis
+        GET     hdr.printmacros
+        GET     hdr.macros
+
+; variable types
+TYPE_STRING     * 0
+TYPE_NATURAL    * 0
+TYPE_NUMBER     * 1
+TYPE_MACRO      * 2
+TYPE_EXPANDED   * 3
+TYPE_LITERAL    * 4
+TYPE_CODE       * 16
+
+
+                ^ 0, r12
+
+printbuffer     #   printbuffersize
+valuebuffer     #   256
+
+
+set_var_value  ROUT
+        MOV     r9, #TYPE_STRING        ; default type = string (will GSTrans first)
+
+        LDRB    r0, [r1]                ; what type of set is this?
+        TEQ     r0, #'X'                ; extended operation
+        BEQ     extended_set
+
+        TEQ     r0, #'+'                ; this is one that we want to set the type of.
+        BNE     %FT09
+
+        LDRB    r0, [r1, #1]            ; read the variable type
+        TEQ     r0, #'m'                ; macro
+        MOVEQ   r9, #TYPE_MACRO
+        BEQ     %FT07
+
+        TEQ     r0, #'e'                ; expanded
+        MOVEQ   r9, #TYPE_EXPANDED
+        BEQ     %FT07
+
+        TEQ     r0, #'l'                ; literal
+        MOVEQ   r9, #TYPE_LITERAL
+        BEQ     %FT07
+
+        TEQ     r0, #'n'                ; number
+        MOVEQ   r9, #TYPE_NUMBER
+        BEQ     %FT07
+
+syntax
+        PrintLine "Syntax: var_set -<variable>"
+        PrintLine "        var_set [+n|+m|+e|+l] <variable> <value>"
+        PrintLine "        var_set X[rwe] <variable> [<value>]"
+        MOV     pc, lr
+
+; skip to variable name
+07
+        LDRB    r0, [r1, #2]!           ; skip -#; next char should be a space
+        TEQ     r0, #' '                ; ok
+        BNE     syntax
+08
+        LDRB    r0, [r1, #1]!           ; next char might be a space
+        TEQ     r0, #' '
+        BEQ     %BT08
+
+09
+        MOV     r5, r1                  ; R5 => the variable to set
+
+; find the limits in the buffer
+10
+        LDRB    r0, [r1], #1
+        CMP     r0, #32
+        BGT     %BT10
+
+        MOV     r0, #0
+        STRB    r0, [r1, #-1]
+        SUBNE   r1, r1, #1
+        MOV     r6, r1                  ; R6 => the value to set
+
+; Decide if we're deleting (put a '-' before the variable name)
+        LDRB    r0, [r5]
+        TEQ     r0, #'-'
+        ADDEQ   r5, r5, #1
+        MOVEQ   r6, #-1
+        MOVEQ   r7, #-1
+        BEQ     %FT20
+
+        TEQ     r9, #TYPE_NUMBER
+        BNE     %FT14
+
+; they wanted a number, so we need to read it
+        MOV     r8, #0
+        LDRB    r0, [r6]
+        TEQ     r0, #'-'
+        MOVEQ   r8, #1                  ; flag as negative
+        ADDEQ   r6, r6, #1
+        XSWI    OS_ReadUnsigned, #10 :OR: (1<<31), r6 ; terminates on control character
+        ADR     r6, valuebuffer + 8
+        TEQ     r8, #1
+        RSBEQ   r2, r2, #0
+        STR     r2, [r6]
+        MOV     r7, #4
+        B       %FT20
+
+14
+; Work out how long this string is
+        MOV     r1, r6
+15
+        LDRB    r0, [r1], #1
+        CMP     r0, #32
+        BGE     %BT15
+        SUB     r7, r1, r6
+        SUB     r7, r7, #1              ; do not include the terminator
+
+20
+write_variable_value
+
+        PrintMessage "SetVar: ", 16
+        PrintString r5
+        SWI     OS_NewLine
+
+        PrintMessage "Type: ", 16
+        PrintInteger r9
+        SWI     OS_NewLine
+
+        PrintMessage "Length: ", 16
+        PrintInteger r7
+        SWI     OS_NewLine
+
+        CMP     r7, #0
+        BGE     %FT30
+        PrintMessage "Delete"
+        B       %FT40
+30
+        PrintMessage "To Value: ", 16
+        TEQ     r9, #TYPE_NUMBER
+        BEQ     %FT35
+        PrintString r6
+        B       %FT40
+35
+        LDR     r0, [r6]
+        PrintInteger r0
+40
+        SWI     OS_NewLine
+
+; Set the variable
+        MOV     r0, r5
+        MOV     r1, r6
+        MOV     r2, r7
+        MOV     r3, #0
+        MOV     r4, r9
+        SWI     OS_SetVarVal
+
+        PrintLine "------"
+
+; Clear the buffer to check that the content was set properly
+        LDR     r0, =&55555555
+        ADR     r1, valuebuffer
+        STR     r0, [r1], #4
+        STR     r0, [r1], #4
+        STR     r0, [r1], #4
+        MOV     r0, #0
+        STR     r0, [r1], #4
+
+        MOV     r4, #TYPE_NATURAL
+
+50
+show_variable_value
+; Now show the value, so we can see if it was done properly
+        MOV     r0, r5
+        ADR     r1, valuebuffer
+        MOV     r2, #?valuebuffer
+        MOV     r3, #0
+        SWI     OS_ReadVarVal
+
+        PrintMessage "Length: ", 16
+        PrintInteger r2
+        SWI     OS_NewLine
+
+        PrintMessage "Type: ", 16
+        PrintInteger r4
+        SWI     OS_NewLine
+
+        PrintMessage "Context: ", 16
+        TEQ     r3, #0
+        ADREQ   r3, null
+        PrintString r3
+        SWI     OS_NewLine
+
+        PrintMessage "Value: ", 16
+        TEQ     r4, #TYPE_NUMBER
+        BNE     %FT60
+
+        LDR     r0, [r1]
+        PrintInteger r0
+        B       %FT65
+60
+        MOV     r0, #0
+        STRB    r0, [r1, r2]
+        PrintString r1
+65
+        SWI     OS_NewLine
+
+; If this wasn't a string, try to expand it
+        TEQ     r4, #TYPE_STRING
+        BEQ     %FT90
+
+        PrintLine "------ Expanding variable ------"
+        MOV     r4, #TYPE_EXPANDED
+        B       %BT50
+
+90
+        MOV     pc, lr
+
+null
+        = "<null>", 0
+
+        ALIGN
+
+; r1 -> the type of set operation:
+;           c = create code variable
+;           r = create and read code variable
+;           w = create and write a code variable
+;           e = create and write a code variable that errors
+extended_set SIGNATURE
+        ADD     r1, r1, #1
+        LDRB    r8, [r1], #1                        ; remember the operation type
+        CMP     r8, #' '
+        BLS     syntax
+
+        LDRB    r0, [r1], #1
+        TEQ     r0, #' '
+        BNE     syntax
+
+        MOV     r7, r1
+; r7-> the variable to set
+10
+        LDRB    r0, [r1], #1
+        CMP     r0, #' '
+        BHI     %BT10
+        MOV     r0, #0
+        STREQB  r0, [r1, #-1]
+        STRNEB  r0, [r1, #-1]!
+        MOV     r6, r1
+; r6-> the second parameter
+
+
+; Whatever happens we're going to create the code variable
+
+        PrintMessage "Create code variable: "
+        PrintString r7
+        SWI     OS_NewLine
+
+        MOV     r0, r7
+        ADR     r1, my_code_var
+        MOV     r2, #my_code_var_end - my_code_var
+        MOV     r3, #0
+        MOV     r4, #TYPE_CODE
+        MOV     r5, r12                                 ; extended interface to use code workspace
+        SWI     OS_SetVarVal
+
+; the code variable has now been created
+
+        TEQ     r8, #'r'
+        MOVEQ   r5, r7
+        BEQ     show_variable_value
+
+        TEQ     r8, #'w'
+        BNE     %FT50
+        MOV     r5, r7
+
+        MOV     r1, r6
+20
+        LDRB    r0, [r1], #1
+        CMP     r0, #' '
+        BHI     %BT20
+        SUB     r7, r1, r6                              ; length of value to write
+        SUB     r7, r7, #1                              ; omit the terminator
+
+        MOV     r9, #TYPE_STRING
+        B       write_variable_value
+
+50
+        TEQ     r8, #'e'
+        BNE     syntax
+
+        PrintLine "Trying to generate an error from OS_SetVarVal"
+        MOV     r5, r7
+        ADR     r6, trigger_error_string
+        MOV     r7, #1
+        MOV     r9, #TYPE_STRING
+        B       write_variable_value
+
+
+trigger_error_string = '!'
+
+
+my_code_var SIGNATURE
+        B       my_code_var_write
+        B       my_code_var_read
+
+my_code_var_write SIGNATURE
+        Push    "lr"
+        PrintMessage "Called write code variable: value="
+        PrintStringN r1, r2
+        SWI     OS_NewLine
+        LDRB    r0, [r1]
+        TEQ     r0, #'!'
+        BNE     %FT30
+        ADR     r0, error_failed_write
+        SETV
+        Pull    "pc"
+30
+        Pull    "pc"
+
+
+my_code_var_read SIGNATURE
+        Push    "lr"
+        PrintLine "Called read code variable"
+        ADR     r0, my_code_var_value
+        MOV     r2, #?my_code_var_value
+        Pull    "pc"
+
+my_code_var_value = "My value"
+        = "X"
+        ALIGN
+
+error_failed_write
+        DCD     1234
+        = "Failed to write code variable", 0
+        ALIGN
+
+my_code_var_end
+
+        END

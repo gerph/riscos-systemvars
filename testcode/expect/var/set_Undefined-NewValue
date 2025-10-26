@@ -1,0 +1,9 @@
+SetVar:         Undefined
+Type:           0
+Length:         8
+To Value:       NewValue
+------
+Length:         8
+Type:           0
+Context:        Undefined
+Value:          NewValue

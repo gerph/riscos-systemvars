@@ -1,0 +1,157 @@
+#
+# SUT:    Kernel: System Variables
+# Area:   Reading and writing
+# Class:  Functional
+# Type:   Integration test
+#
+
+Group: SysVars: Reading
+Command: $TOOL $FILE $ARG1
+File: bin/var_read
+Expect: expect/var/read_$ARG1
+Replace: expect/var/replacements
+
+Test: Undefined variable
+Args: Undefined
+RC: 1
+
+Test: Sys$Time
+Args: Sys$Time
+
+Test: Wildcard enumeration
+Command: $TOOL --set-variable "This=1" --set-variable "That=2" --set-variable "TheOther=3" $FILE Th*
+Expect: expect/var/read_enumeration
+
+
+# Tests that the standard code variables work as expected
+Group: SysVars: Standard variables
+Command: $TOOL $FILE $ARG1 $ARG2
+File: bin/var_read
+Expect: expect/var/standardvars_$ARG1$ARG2
+Replace: expect/var/replacements
+
+Test: Sys$Time
+Args: Sys$Time
+
+Test: Sys$Date
+Args: Sys$Date
+
+Test: Sys$Year
+Args: Sys$Year
+
+Test: Sys$Time (with territory)
+Command: $TOOL --load-internal-modules $FILE $ARG1
+Args: Sys$Time _territory
+Disable: Not relevant outside Pyromaniac
+
+Test: Sys$Date (with territory)
+Command: $TOOL --load-internal-modules $FILE $ARG1
+Args: Sys$Date _territory
+Disable: Not relevant outside Pyromaniac
+
+Test: Sys$Year (with territory)
+Command: $TOOL --load-internal-modules $FILE $ARG1
+Args: Sys$Year _territory
+Disable: Not relevant outside Pyromaniac
+
+
+
+Group: SysVars: Reading (with corruption)
+Command: $TOOL $FILE --config sysvars.read_corrupts_buffer=increment $ARG1
+File: bin/var_read
+Expect: expect/var/read_$ARG1
+Replace: expect/var/replacements
+Disable: Not relevant outside Pyromaniac
+
+Test: Undefined variable
+Args: Undefined
+RC: 1
+
+Test: Sys$Time
+Args: Sys$Time
+
+Test: Wildcard enumeration
+Command: $TOOL --config sysvars.read_corrupts_buffer=increment --set-variable "This=1" --set-variable "That=2" --set-variable "TheOther=3" $FILE Th*
+Expect: expect/var/read_enumeration
+
+
+Group: SysVars: Writing strings
+Command: $TOOL $FILE $ARG1 $ARG2
+File: bin/var_set
+Expect: expect/var/set_$ARG1-$ARG2
+Replace: expect/var/replacements
+
+Test: Undefined variable
+Args: Undefined NewValue
+
+Test: Existing variable: CLI$Prompt
+Args: CLI$Prompt ]
+
+# At present this will be allowed - in the future, it'll be denied
+# (or will we actually change the time?)
+Test: Existing variable: Sys$Time
+Args: Sys$Time 12:15
+RC: 1
+
+# Expansion on setting the variable
+Test: Use character expansion
+Args: My$Variable <65>
+Expect: expect/var/set_expansion_char
+
+Test: Use variable expansion
+Args: My$Variable <Sys$Time>
+Expect: expect/var/set_expansion_variable
+
+Test: Quoted strings
+Args: My$Variable "\"hello\""
+Expect: expect/var/set_quoted
+
+
+Group: SysVars: Writing other types
+Command: $TOOL $FILE $ARG1 $ARG2 $ARG3
+File: bin/var_set
+Replace: expect/var/replacements
+
+Test: Number value
+Args: +n My$Variable 9007
+Expect: expect/var/set_number
+
+Test: Number value (negative)
+Args: +n My$Variable -9007
+Expect: expect/var/set_number_negative
+
+Test: Literal value
+Args: +l My$Variable <65>
+Expect: expect/var/set_literal
+
+Test: Macro value
+Args: +m My$Variable TIME:<Sys$Time>
+Expect: expect/var/set_macro
+
+Test: Expanded value
+Args: +e My$Variable 6*2
+Expect: expect/var/set_expanded
+
+Test: Code variable creation+reading
+Args: Xr My$Variable
+Expect: expect/var/set_code_read
+
+Test: Code variable creation+writing
+Args: Xw My$Variable MyValue
+Expect: expect/var/set_code_write
+
+Test: Code variable creation+write error
+Args: Xe My$Variable
+Expect: expect/var/set_code_error
+RC: 1
+
+
+Group: SysVars: Delete variable
+
+Test: Delete variable
+Command: $TOOL --set-variable "My$Var=Hello" $FILE -My$Var
+File: bin/var_set
+Replace: expect/var/replacements
+Expect: expect/var/delete
+# it returns an error, because the variable is gone when we try to read it, which is correct!
+RC: 1

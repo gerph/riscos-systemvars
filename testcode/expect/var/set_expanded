@@ -1,0 +1,14 @@
+SetVar:         My$Variable
+Type:           3
+Length:         3
+To Value:       6*2
+------
+Length:         4
+Type:           1
+Context:        My$Variable
+Value:          12
+------ Expanding variable ------
+Length:         2
+Type:           0
+Context:        My$Variable
+Value:          12
