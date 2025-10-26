@@ -1,0 +1,14 @@
+SetVar:         My$Variable
+Type:           2
+Length:         15
+To Value:       TIME:<Sys$Time>
+------
+Length:         15
+Type:           2
+Context:        My$Variable
+Value:          TIME:<Sys$Time>
+------ Expanding variable ------
+Length:         13
+Type:           0
+Context:        My$Variable
+Value:          TIME:HH:MM:SS

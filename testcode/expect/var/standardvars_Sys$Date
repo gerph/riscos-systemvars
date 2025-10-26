@@ -1,0 +1,7 @@
+ReadVarValue:   Sys$Date
+----
+Read length:    10
+Length:         10
+Type:           0
+Context:        Sys$Date
+Value:          DDD,NN MMM

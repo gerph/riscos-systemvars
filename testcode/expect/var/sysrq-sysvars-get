@@ -1,0 +1,6 @@
+SysRq: sysvars-get : ['Run$Path']
+description: ',%.'
+name: 'Run$Path'
+type: 0
+typename: 'string'
+value: ',%.'

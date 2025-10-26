@@ -1,0 +1,19 @@
+ReadVarValue:   Th*
+----
+Read length:    1
+Length:         1
+Type:           0
+Context:        That
+Value:          2
+----
+Read length:    1
+Length:         1
+Type:           0
+Context:        TheOther
+Value:          3
+----
+Read length:    1
+Length:         1
+Type:           0
+Context:        This
+Value:          1

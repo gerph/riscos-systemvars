@@ -1,0 +1,8 @@
+Create code variable: My$Variable
+Trying to generate an error from OS_SetVarVal
+SetVar:         My$Variable
+Type:           0
+Length:         1
+To Value:       !
+Called write code variable: value=!
+Error: Failed to write code variable (Error number &4d2)

@@ -1,0 +1,9 @@
+SetVar:         My$Variable
+Type:           0
+Length:         4
+To Value:       <65>
+------
+Length:         1
+Type:           0
+Context:        My$Variable
+Value:          A

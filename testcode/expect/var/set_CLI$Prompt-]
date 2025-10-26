@@ -1,0 +1,9 @@
+SetVar:         CLI$Prompt
+Type:           0
+Length:         1
+To Value:       ]
+------
+Length:         1
+Type:           0
+Context:        CLI$Prompt
+Value:          ]

@@ -1,0 +1,8 @@
+SysRq: sysvars-set : ['Temp$Variable', 'TestValue']
+True
+SysRq: sysvars-get : ['Temp$Variable']
+description: 'TestValue'
+name: 'Temp$Variable'
+type: 0
+typename: 'string'
+value: 'TestValue'

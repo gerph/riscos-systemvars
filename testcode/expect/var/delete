@@ -1,0 +1,6 @@
+SetVar:         My$Var
+Type:           0
+Length:         -1
+Delete
+------
+Error: Variable 'My$Var' not found (Error number &124)

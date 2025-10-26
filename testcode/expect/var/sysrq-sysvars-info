@@ -1,0 +1,19 @@
+SysRq: sysvars-info
+{'typename': 'string', 'type': 0, 'name': 'Alias$.', 'value': 'Cat ', 'description': 'Cat '}
+{'typename': 'string', 'type': 0, 'name': 'CLI$Prompt', 'value': '*', 'description': '*'}
+{'typename': 'string', 'type': 0, 'name': 'File$Path', 'value': '@.', 'description': '@.'}
+{'typename': 'code', 'type': 16, 'name': 'FileSwitch$CurrentFilingSystem', 'value': (None, None), 'description': 'Internal call <bound method Filesystem.sysvar_currentfs of <riscos.filesystem.Filesystem object>>'}
+{'typename': 'code', 'type': 16, 'name': 'FileSwitch$HostFS$CSD', 'value': (None, None), 'description': 'Internal call <bound method Filesystem.sysvar_csd of <riscos.filesystem.Filesystem object>>'}
+{'typename': 'code', 'type': 16, 'name': 'FileSwitch$HostFS$Lib', 'value': (None, None), 'description': 'Internal call <bound method Filesystem.sysvar_lib of <riscos.filesystem.Filesystem object>>'}
+{'typename': 'code', 'type': 16, 'name': 'FileSwitch$HostFS$PSD', 'value': (None, None), 'description': 'Internal call <bound method Filesystem.sysvar_psd of <riscos.filesystem.Filesystem object>>'}
+{'typename': 'code', 'type': 16, 'name': 'FileSwitch$HostFS$URD', 'value': (None, None), 'description': 'Internal call <bound method Filesystem.sysvar_urd of <riscos.filesystem.Filesystem object>>'}
+{'typename': 'code', 'type': 16, 'name': 'FileSwitch$TemporaryFilingSystem', 'value': (None, None), 'description': 'Internal call <bound method Filesystem.sysvar_temporaryfs of <riscos.filesystem.Filesystem object>>'}
+{'typename': 'string', 'type': 0, 'name': 'Run$Path', 'value': ',%.', 'description': ',%.'}
+{'typename': 'string', 'type': 0, 'name': 'Sys$Arch', 'value': 'aarch32', 'description': 'aarch32'}
+{'typename': 'code', 'type': 16, 'name': 'Sys$Date', 'value': (None, None), 'description': 'Internal call <function <lambda>>'}
+{'typename': 'string', 'type': 0, 'name': 'Sys$DateFormat', 'value': '%24:%mi:%se %dy-%m3-%ce%yr', 'description': '%24:%mi:%se %dy-%m3-%ce%yr'}
+{'typename': 'code', 'type': 16, 'name': 'Sys$Random', 'value': (None, None), 'description': 'Internal call <function <lambda>>'}
+{'typename': 'string', 'type': 0, 'name': 'Sys$RCLimit', 'value': '256', 'description': '256'}
+{'typename': 'string', 'type': 0, 'name': 'Sys$ReturnCode', 'value': '0', 'description': '0'}
+{'typename': 'code', 'type': 16, 'name': 'Sys$Time', 'value': (None, None), 'description': 'Internal call <function <lambda>>'}
+{'typename': 'code', 'type': 16, 'name': 'Sys$Year', 'value': (None, None), 'description': 'Internal call <function <lambda>>'}

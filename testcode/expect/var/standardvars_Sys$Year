@@ -1,0 +1,7 @@
+ReadVarValue:   Sys$Year
+----
+Read length:    4
+Length:         4
+Type:           0
+Context:        Sys$Year
+Value:          20YY

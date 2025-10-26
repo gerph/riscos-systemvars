@@ -1,0 +1,7 @@
+ReadVarValue:   Sys$Time
+----
+Read length:    8
+Length:         8
+Type:           0
+Context:        Sys$Time
+Value:          HH:MM:SS
