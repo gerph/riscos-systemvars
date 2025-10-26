@@ -173,7 +173,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
             case svt_code:
                 {
                     _kernel_oserror *err;
-                    err = codevar_read(vardata, &vardata, &vardatalen);
+                    err = codevar_read(vardata, var->codepw, &vardata, &vardatalen);
                     if (err)
                         return err;
                 }
@@ -218,6 +218,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             R2 = length of value, or negative to delete the variable
             R3 = context pointer (used with wildcarded names), or 0 for first call
             R4 = variable type
+            R5 = code private word (if R4 = 16)
 
         <=  R0 - R2 preserved
             R3 = new context pointer (null-terminated)
@@ -232,12 +233,14 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     sysvartype_t type = (sysvartype_t)r->r[4]; /* How to extract */
     sysvarerror_t sverr;
     uint32_t datanumber;
+    void *codepw = (void *)((type == svt_code) ? r->r[5] : NULL);
 
     dprintf("SetVarVal '%s'\n", cs);
 
     if (datalen & (1u<<31))
     {
         /* This is a deletion operation */
+        /* FIXME: If this is a code variable, we only delete if the type was code - otherwise we set to empty */
         bool deleted;
         dprintf("  is a delete\n");
         deleted = sysvar_delete(cs);
@@ -302,7 +305,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             return err_BadType;
     }
 
-    sverr = sysvar_update_or_create(cs, data, datalen, type, &context);
+    sverr = sysvar_update_or_create(cs, data, datalen, type, codepw, &context);
     dprintf("  Returned with error %i\n", sverr);
     switch (sverr)
     {
@@ -331,7 +334,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     }
 
     r->r[3] = (int)context;
-    dprintf("  set ok\n", sverr);
+    dprintf("  set ok\n");
 
     return NULL;
 }

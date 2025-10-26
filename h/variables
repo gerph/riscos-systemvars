@@ -37,6 +37,7 @@ struct sysvar_s {
     char            *name;
     sysvarvalue_t    value;
     sysvartype_t     type;
+    void            *codepw;
 };
 
 
@@ -74,12 +75,14 @@ int sysvar_matchname(csstring_t cs1, csstring_t cs2);
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
+                codepw = private word for code variables
  Returns:       error code
  ******************************************************************/
 sysvarerror_t sysvar_create(csstring_t   cs,
                             uint8_t     *data,
                             uint32_t     datalen,
-                            sysvartype_t type);
+                            sysvartype_t type,
+                            void        *codepw);
 
 
 /*************************************************** Gerph *********
@@ -100,6 +103,7 @@ sysvar_t *sysvar_read(csstring_t   cs,
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
+                codepw = the private word for code variables
                 context-> where to store the last variable name returned,
                           and where to start searching, or NULL to start at
                           the beginning
@@ -109,6 +113,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
                                       uint8_t     *data,
                                       uint32_t     datalen,
                                       sysvartype_t type,
+                                      void        *codepw,
                                       char       **contextp);
 
 /*************************************************** Gerph *********

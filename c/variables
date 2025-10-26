@@ -71,12 +71,14 @@ int sysvar_matchname(csstring_t cs1, csstring_t cs2)
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
+                codepw = private word for code variables
  Returns:       error code
  ******************************************************************/
 sysvarerror_t sysvar_create(csstring_t   cs,
                             uint8_t     *data,
                             uint32_t     datalen,
-                            sysvartype_t type)
+                            sysvartype_t type,
+                            void        *codepw)
 {
     sysvar_t *sysvar;
     uint8_t *newdata;
@@ -106,6 +108,7 @@ sysvarerror_t sysvar_create(csstring_t   cs,
     sysvar->value.data = newdata;
     sysvar->value.datalen = datalen;
     sysvar->type = type;
+    sysvar->codepw = codepw;
 
 #ifndef NO_CODE_VARS
     if (type == svt_code)
@@ -308,6 +311,7 @@ bool sysvar_delete(csstring_t cs)
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
+                codepw = the private word for code variables
                 context-> where to store the last variable name returned,
                           and where to start searching, or NULL to start at
                           the beginning
@@ -317,6 +321,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
                                       uint8_t     *data,
                                       uint32_t     datalen,
                                       sysvartype_t type,
+                                      void        *codepw,
                                       char       **contextp)
 {
     char *context = *contextp;
@@ -330,7 +335,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
     {
         /* Not found, so this is a new variable */
         *contextp = NULL;
-        return sysvar_create(cs, data, datalen, type);
+        return sysvar_create(cs, data, datalen, type, codepw);
     }
     /* We are updating a variable */
 
@@ -351,7 +356,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
             }
             /* Create the code variable */
             *contextp = NULL;
-            return sysvar_create(cs, data, datalen, type);
+            return sysvar_create(cs, data, datalen, type, codepw);
         }
 
         if (sysvar->type == svt_code)
@@ -375,7 +380,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
     {
         /* This is a code variable we are setting */
         _kernel_oserror *err;
-        err = codevar_write(sysvar->value.data, data, datalen);
+        err = codevar_write(sysvar->value.data, sysvar->codepw, data, datalen);
         return err ? SVE_FROM_OSERROR(err) : SVE_OK;
     }
     else
