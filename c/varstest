@@ -23,7 +23,7 @@ bool test_creation(void)
 
 #define ADDVARIABLE(name, value) \
         do { \
-            err = sysvar_create((name), SYSVALUE((value)), svt_string); \
+            err = sysvar_create((name), SYSVALUE((value)), svt_string, NULL); \
             if (err) \
             { \
                 printf("Failed to create variable '%s': err=%i\n", (name), (err)); \

@@ -16,6 +16,17 @@
 #include "variables.h"
 #include "os.h"
 #include "transform.h"
+#include "codevars.h"
+
+/* Define this to debug this file */
+//#define DEBUG
+
+
+#ifdef DEBUG
+#define dprintf if (1) printf
+#else
+#define dprintf if (0) printf
+#endif
 
 
 #ifdef OS_SWIS
@@ -114,10 +125,13 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     sysvartype_t vartype;
     const char *varname;
 
+    dprintf("ReadVarVal: %s\n", cs);
+
     var = sysvar_read(cs, context);
     if (var == NULL)
     {
         r->r[2] = 0;
+        dprintf("  not found\n");
         return err_NoSuchVariable;
     }
 
@@ -126,7 +140,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     vardatalen = var->value.datalen;
     vartype = var->type;
 
-    if (type == svt_expanded)
+    if (type == svt_expanded || vartype == svt_code)
     {
         /* They want a string form - converted to a value to be read as a string */
         switch (vartype)
@@ -157,18 +171,22 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
                 break;
 
             case svt_code:
-                /* FIXME: To be implemented */
+                {
+                    _kernel_oserror *err;
+                    err = codevar_read(vardata, var->codepw, &vardata, &vardatalen);
+                    if (err)
+                        return err;
+                }
                 break;
         }
         vartype = svt_string;
     }
 
-    /* FIXME: No code variables */
-
     if (datalen & (1u<<31))
     {
-        /* Check for existance - documented in PRM*/
+        /* Check for existence - documented in PRM*/
         r->r[2] = ~vardatalen;
+        dprintf("  buffer overflow\n");
         return err_BufferOverflow;
     }
 
@@ -176,6 +194,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     {
         /* Not enough memory for the string */
         r->r[2] = ~vardatalen;
+        dprintf("  buffer overflow\n");
         return err_BufferOverflow;
     }
 
@@ -184,6 +203,7 @@ _kernel_oserror *SWI_ReadVarVal(int number, _kernel_swi_regs *r, void *pw)
     r->r[3] = (int)varname;
     r->r[4] = vartype;
 
+    dprintf("  read value '%.*s'\n", vardatalen, vardata);
     return NULL;
 }
 
@@ -198,6 +218,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             R2 = length of value, or negative to delete the variable
             R3 = context pointer (used with wildcarded names), or 0 for first call
             R4 = variable type
+            R5 = code private word (if R4 = 16)
 
         <=  R0 - R2 preserved
             R3 = new context pointer (null-terminated)
@@ -212,11 +233,17 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
     sysvartype_t type = (sysvartype_t)r->r[4]; /* How to extract */
     sysvarerror_t sverr;
     uint32_t datanumber;
+    void *codepw = (void *)((type == svt_code) ? r->r[5] : NULL);
+
+    dprintf("SetVarVal '%s'\n", cs);
 
     if (datalen & (1u<<31))
     {
         /* This is a deletion operation */
-        bool deleted = sysvar_delete(cs);
+        /* FIXME: If this is a code variable, we only delete if the type was code - otherwise we set to empty */
+        bool deleted;
+        dprintf("  is a delete\n");
+        deleted = sysvar_delete(cs);
         if (deleted)
             return NULL;
         return err_NoSuchVariable;
@@ -239,6 +266,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
         case svt_number:
             /* Is a 4 byte value (1 word) */
             /* In 64-bit OS this will remain as 4-bytes, and a new way of setting the value is required */
+            /* FIXME: Do we need to check the length */
             break;
 
         case svt_expanded:
@@ -268,7 +296,7 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             break;
 
         case svt_code:
-            /* FIXME: No code variables */
+            /* No conversion needed here for system variables */
             break;
 
         /* FIXME: Add svt_number64? */
@@ -277,29 +305,36 @@ _kernel_oserror *SWI_SetVarVal(int number, _kernel_swi_regs *r, void *pw)
             return err_BadType;
     }
 
-    sverr = sysvar_update_or_create(cs, data, datalen, type, &context);
+    sverr = sysvar_update_or_create(cs, data, datalen, type, codepw, &context);
+    dprintf("  Returned with error %i\n", sverr);
     switch (sverr)
     {
-        case sve_ok:
+        case SVE_OK:
             break;
 
-        case sve_badname:
-            return err_BadName;
-
-        case sve_badlength:
-            return err_BadLength;
-
-        case sve_nomemory:
+        case SVE_NOMEMORY:
             return err_NoMemory;
 
-        case sve_badtype:
+        case SVE_BADNAME:
+            return err_BadName;
+
+        case SVE_BADLENGTH:
+            return err_BadLength;
+
+        case SVE_BADPOINTER:
+            return err_BadPointer;
+
+        case SVE_BADTYPE:
             return err_BadType;
 
         default:
+            if (SVE_IS_OSERROR(sverr))
+                return SVE_TO_OSERROR(sverr);
             return err_InternalError;
     }
 
     r->r[3] = (int)context;
+    dprintf("  set ok\n");
 
     return NULL;
 }

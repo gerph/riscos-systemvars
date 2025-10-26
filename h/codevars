@@ -1,0 +1,38 @@
+/*******************************************************************
+ * File:        codevars
+ * Purpose:     Implement the access to code variables
+ * Author:      Gerph
+ * Date:        19 Oct 2025
+ ******************************************************************/
+
+#ifndef CODEVARS_H
+#define CODEVARS_H
+
+#include <stdint.h>
+
+#include "kernel.h"
+
+/*************************************************** Gerph *********
+ Function:      codevar_read
+ Description:   Read the value of a code variable and it's length
+ Parameters:    codevar-> the code variable to run
+                pw = private word to pass to the function
+                data-> where to store the variable data
+                datalen-> where to store the variable data length
+ Returns:       pointer to an error, or NULL if ok
+ ******************************************************************/
+_kernel_oserror *codevar_read(void *vardata, void *pw, uint8_t **data, uint32_t *datalen);
+
+
+/*************************************************** Gerph *********
+ Function:      codevar_write
+ Description:   Write the value to a code variable
+ Parameters:    vardata-> the code variable to run
+                pw = private word to pass to the function
+                data-> the data we are storing
+                datalen = the data length
+ Returns:       pointer to an error, or NULL if ok
+ ******************************************************************/
+_kernel_oserror *codevar_write(void *vardata, void *pw, uint8_t *data, uint32_t datalen);
+
+#endif

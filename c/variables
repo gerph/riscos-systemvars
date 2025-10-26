@@ -16,6 +16,8 @@
 #include "csstring.h"
 #include "variables.h"
 #include "wildcard.h"
+#include "os.h"
+#include "codevars.h"
 
 /* Define this to debug this file */
 //#define DEBUG
@@ -69,15 +71,18 @@ int sysvar_matchname(csstring_t cs1, csstring_t cs2)
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
+                codepw = private word for code variables
  Returns:       error code
  ******************************************************************/
 sysvarerror_t sysvar_create(csstring_t   cs,
                             uint8_t     *data,
                             uint32_t     datalen,
-                            sysvartype_t type)
+                            sysvartype_t type,
+                            void        *codepw)
 {
     sysvar_t *sysvar;
     uint8_t *newdata;
+
 
     /* FIXME: Check the variable name */
     /* FIXME: Check value memory exists? */
@@ -96,12 +101,22 @@ sysvarerror_t sysvar_create(csstring_t   cs,
     if (newdata == NULL)
         goto no_memory_2;
 
+    dprintf("Creating variable %s of length %u\n", cs, datalen);
     memcpy(newdata, data, datalen);
     newdata[datalen] = '\0';
 
     sysvar->value.data = newdata;
     sysvar->value.datalen = datalen;
     sysvar->type = type;
+    sysvar->codepw = codepw;
+
+#ifndef NO_CODE_VARS
+    if (type == svt_code)
+    {
+        /* We need to issue SynchroniseCodeAreas */
+        os_synchronisecodeareas((_addr_t)newdata, (_addr_t)(newdata + datalen));
+    }
+#endif
 
     /* Link to the list */
     {
@@ -131,7 +146,7 @@ sysvarerror_t sysvar_create(csstring_t   cs,
             last->next = sysvar;
     }
 
-    return sve_ok;
+    return SVE_OK;
 
 
 no_memory_2:
@@ -139,7 +154,7 @@ no_memory_2:
 no_memory_1:
     free(sysvar);
 no_memory_0:
-    return sve_nomemory;
+    return SVE_NOMEMORY;
 }
 
 
@@ -296,6 +311,7 @@ bool sysvar_delete(csstring_t cs)
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
+                codepw = the private word for code variables
                 context-> where to store the last variable name returned,
                           and where to start searching, or NULL to start at
                           the beginning
@@ -305,15 +321,21 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
                                       uint8_t     *data,
                                       uint32_t     datalen,
                                       sysvartype_t type,
+                                      void        *codepw,
                                       char       **contextp)
 {
     char *context = *contextp;
-    sysvar_t *sysvar = sysvar_read(cs, context);
+    sysvar_t *sysvar;
+
+    if (datalen > 0 && data < (uint8_t *)0x8000)
+        return SVE_BADPOINTER;
+
+    sysvar = sysvar_read(cs, context);
     if (sysvar == NULL)
     {
         /* Not found, so this is a new variable */
         *contextp = NULL;
-        return sysvar_create(cs, data, datalen, type);
+        return sysvar_create(cs, data, datalen, type, codepw);
     }
     /* We are updating a variable */
 
@@ -322,17 +344,47 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
     /* If the variable type has changed, we need to be careful */
     if (sysvar->type != type)
     {
-        if (sysvar->type == svt_code ||
-            type == svt_code)
+#ifndef NO_CODE_VARS
+        if (type == svt_code)
         {
-            /* Changing code variables not supported yet */
-            return sve_badtype;
+            /* They want to set a code variable, and a non-code code variable exists */
+            /* Delete the old variable */
+            if (!sysvar_delete(cs))
+            {
+                /* Not sure why we would fail to delete, but if we do, we just report bad type */
+                return SVE_BADTYPE;
+            }
+            /* Create the code variable */
+            *contextp = NULL;
+            return sysvar_create(cs, data, datalen, type, codepw);
         }
+
+        if (sysvar->type == svt_code)
+        {
+            /* It was a code variable, and now they're setting something else */
+            /* Only setting strings are supported */
+            if (type != svt_string)
+            {
+                /* Cannot set a code variable value to anyhting but a string */
+                return SVE_BADTYPE;
+            }
+        }
+#endif
     }
 
     /* The context has been set to the variable name */
     *contextp = sysvar->name;
 
+#ifndef NO_CODE_VARS
+    if (sysvar->type == svt_code)
+    {
+        /* This is a code variable we are setting */
+        _kernel_oserror *err;
+        err = codevar_write(sysvar->value.data, sysvar->codepw, data, datalen);
+        return err ? SVE_FROM_OSERROR(err) : SVE_OK;
+    }
+    else
+#endif
     {
         uint8_t *newdata;
         /* Note: This method means that we won't reallocate memory if the string gets shorter.
@@ -344,7 +396,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
         {
             newdata = malloc(datalen + 1);
             if (newdata == NULL)
-                return sve_nomemory;
+                return SVE_NOMEMORY;
             free(sysvar->value.data);
         }
         else
@@ -359,7 +411,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
         sysvar->value.datalen = datalen;
         sysvar->type = type;
     }
-    return sve_ok;
+    return SVE_OK;
 }
 
 
@@ -410,7 +462,7 @@ void sysvars_dump(void)
         }
         else
         {
-            printf("unknown\n");
+            printf("unknown, data at %p\n", cur->value.data);
         }
     }
 }

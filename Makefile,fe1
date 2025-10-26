@@ -44,11 +44,19 @@ CDEFINES   =
 OBJS       = o.modhead \
              o.wildcard \
 			 o.csstring \
+			 o.codevars \
 			 o.osswis \
 			 o.os \
 			 o.transform \
 			 o.variables \
 			 o.module
+
+ifeq (${BUILD64},1)
+OBJS += o.callx64 \
+		o.call64
+else
+LIBS += C:Asm.o.libAsm
+endif
 
 FORTIFY    = yes
 

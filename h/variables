@@ -24,8 +24,11 @@ typedef enum sysvartype_e {
     svt_number = 1,
     svt_macro = 2,
     svt_expanded = 3,
-    svt_literal = 4,
+    svt_literal = 4
+#ifndef NO_CODE_VARS
+    ,
     svt_code = 16
+#endif
 } sysvartype_t;
 
 typedef struct sysvar_s sysvar_t;
@@ -34,15 +37,23 @@ struct sysvar_s {
     char            *name;
     sysvarvalue_t    value;
     sysvartype_t     type;
+    void            *codepw;
 };
 
-typedef enum sysvarerror_e {
-    sve_ok = 0,
-    sve_badname,
-    sve_badlength,
-    sve_nomemory,
-    sve_badtype
-} sysvarerror_t;
+
+typedef uint32_t sysvarerror_t;
+
+#define SVE_OK          (0)
+#define SVE_NOMEMORY    (1)
+#define SVE_BADNAME     (2)
+#define SVE_BADLENGTH   (3)
+#define SVE_BADPOINTER  (4)
+#define SVE_BADTYPE     (5)
+#define SVE_LAST        (6)
+
+#define SVE_IS_OSERROR(sve) ((sve > SVE_LAST) ? true : false)
+#define SVE_TO_OSERROR(sve) (_kernel_oserror *)(sve)
+#define SVE_FROM_OSERROR(err) (sysvarerror_t)(err)
 
 
 /*************************************************** Gerph *********
@@ -64,12 +75,14 @@ int sysvar_matchname(csstring_t cs1, csstring_t cs2);
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
+                codepw = private word for code variables
  Returns:       error code
  ******************************************************************/
 sysvarerror_t sysvar_create(csstring_t   cs,
                             uint8_t     *data,
                             uint32_t     datalen,
-                            sysvartype_t type);
+                            sysvartype_t type,
+                            void        *codepw);
 
 
 /*************************************************** Gerph *********
@@ -90,6 +103,7 @@ sysvar_t *sysvar_read(csstring_t   cs,
                 data-> value of the variable
                 datalen = the length of the variable
                 type = type of the variable
+                codepw = the private word for code variables
                 context-> where to store the last variable name returned,
                           and where to start searching, or NULL to start at
                           the beginning
@@ -99,6 +113,7 @@ sysvarerror_t sysvar_update_or_create(csstring_t   cs,
                                       uint8_t     *data,
                                       uint32_t     datalen,
                                       sysvartype_t type,
+                                      void        *codepw,
                                       char       **contextp);
 
 /*************************************************** Gerph *********

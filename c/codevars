@@ -1,0 +1,121 @@
+/*******************************************************************
+ * File:        codevars
+ * Purpose:     Implement the access to code variables
+ * Author:      Gerph
+ * Date:        19 Oct 2025
+ ******************************************************************/
+
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "kernel.h"
+#include "Asm/callx.h"
+
+#include "os.h"
+#include "codevars.h"
+#include "modhead.h"
+
+/* Define this to debug this file */
+//#define DEBUG
+
+
+#ifdef DEBUG
+#define dprintf if (1) printf
+#else
+#define dprintf if (0) printf
+#endif
+
+
+typedef uint32_t _inst_t;
+
+#ifdef __riscos64
+typedef struct codevar_s {
+    uint64_t    var_write;
+    uint64_t    var_read;
+} codevar_t;
+#else
+typedef struct codevar_s {
+    _inst_t     var_write;
+    _inst_t     var_read;
+} codevar_t;
+#endif
+
+
+/*************************************************** Gerph *********
+ Function:      codevar_read
+ Description:   Read the value of a code variable and it's length
+ Parameters:    vardata-> the code variable to run
+                pw = private word to pass to the function
+                datap-> where to store the variable data
+                datalenp-> where to store the variable data length
+ Returns:       pointer to an error, or NULL if ok
+ ******************************************************************/
+_kernel_oserror *codevar_read(void *vardata, void *pw, uint8_t **datap, uint32_t *datalenp)
+{
+    codevar_t *codevar = (codevar_t *)vardata;
+    _kernel_oserror *err = NULL;
+
+    dprintf("Reading code variable...\n");
+#ifdef __riscos64
+    void *r0 = NULL;
+    if (codevar->var_read < (_addr_t)0x8000)
+    {
+        dprintf("  invalid code variable pointer: %p\n", codevar->var_read);
+        return err_BadPointer;
+    }
+    err = _callx(codevar->var_read, NULL, _INR(0, 2)|_OUTR(0, 2), 0, 0, pw, &r0, datap, datalenp);
+    if (!err && r0 != NULL)
+        err = (_kernel_oserror *)r0;
+#else
+    err = _callx(&codevar->var_read, pw, _OUT(0)|_OUT(2), datap, datalenp);
+#endif
+    if (err)
+    {
+        dprintf("  got error: %s\n", err->errmess);
+    }
+    else
+    {
+        dprintf("  read at %p, length %i\n", *datap, *datalenp);
+        dprintf("  read '%.*s'\n", *datalenp, *datap);
+    }
+    return err;
+}
+
+
+/*************************************************** Gerph *********
+ Function:      codevar_write
+ Description:   Write the value to a code variable
+ Parameters:    vardata-> the code variable to run
+                pw = private word to pass to the function
+                data-> the data we are storing
+                datalen = the data length
+ Returns:       pointer to an error, or NULL if ok
+ ******************************************************************/
+_kernel_oserror *codevar_write(void *vardata, void *pw, uint8_t *data, uint32_t datalen)
+{
+    codevar_t *codevar = (codevar_t *)vardata;
+    _kernel_oserror *err = NULL;
+
+    dprintf("Writing code variable '%.*s'\n", datalen, data);
+#ifdef __riscos64
+    void *r0 = NULL;
+    if (codevar->var_write < (_addr_t)0x8000)
+        return err_BadPointer;
+    err = _callx(codevar->var_write, NULL, _INR(0, 2)|_OUT(0), data, datalen, pw, &r0);
+    if (!err && r0 != NULL)
+        err = (_kernel_oserror *)r0;
+#else
+    err = _callx(&codevar->var_write, pw, _INR(1, 2), data, datalen);
+#endif
+    if (err)
+    {
+        dprintf("  got error: %s\n", err->errmess);
+    }
+    else
+    {
+        dprintf("  ok\n");
+    }
+    return err;
+}
+
