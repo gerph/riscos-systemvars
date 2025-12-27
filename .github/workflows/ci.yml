@@ -57,9 +57,10 @@ jobs:
 
           # Send the archive file to build service (timeout of 60 seconds)
           ./riscos-build-online -i /tmp/source-archive.zip -a off -t 60 -o /tmp/built
+
       - name: Test the module
         run: |
-          # Extract the Debugger we built
+          # Extract the module we built
           unzip /tmp/built,a91
 
           # Put it in the module directory so we can use it
