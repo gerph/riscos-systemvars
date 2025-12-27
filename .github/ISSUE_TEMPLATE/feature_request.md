@@ -7,11 +7,24 @@ assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Is your feature request related to a problem?
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+<!-- Give a clear description of what you're trying to address with
+     this request.
+     For example, "I'm always frustrated when [...]",
+     "It is hard to [...]"
+  -->
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## Describe the solution you'd like
+
+<!-- Give a clear description of how you the request might be
+     addressed. If you have ideas about how it could be implemented,
+     separate them from user interface changes.
+  -->
+
+## Additional context
+
+<!-- If you have some context, like places where this would have
+     helped, screenshots or mock ups of an interface, or the sort
+     of results you'd like to see, include them here.
+  -->
