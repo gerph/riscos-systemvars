@@ -15,19 +15,24 @@ fi
 #quiet=false
 
 # We're running only AArch32 at the moment
-arch=aarch32
+arch=${ARCH:-aarch32}
 
 # How long each job runs for
 timeout=30
 
 # Files we will archive
-files=(SystemVars,ffa
-       SystemVarsDefaults32,ffa
-       bin/var_read,ffc
+files=(bin/var_read,ffc
        bin/var_set,ffc
        testdata
       )
 
+# List of module files we will load
+modules=(SystemVars SystemVarsDefaults32)
+
+# Add the modules we need to the files we upload
+for module in "${modules[@]}" ; do
+    files+=("$module,ffa")
+done
 
 # We want to turn all the pyro switches into things that can be run inside the Build service.
 # The switches look like this:
@@ -68,6 +73,8 @@ while [[ $# -gt 0 ]] ; do
         val=${1#*=}
         lines+=("Set $var $val")
         nextarg=
+    elif [[ "$nextarg" == 'ignore' ]] ; then
+        nextarg=
     else
         if [[ "$1" == '--command' ]] ; then
             nextarg='command'
@@ -75,6 +82,10 @@ while [[ $# -gt 0 ]] ; do
             nextarg='config'
         elif [[ "$1" == '--set-variable' ]] ; then
             nextarg='set'
+        elif [[ "$1" == '--load-internal-modules' ]] ; then
+            true    # ignore
+        elif [[ "$1" == '--load-internal-group' ]] ; then
+            nextarg='ignore'
         elif [[ "${1:0:2}" == '--' ]] ; then
             echo "Unsupported switch '$1'" >&2
             exit 1
@@ -122,20 +133,21 @@ jobs:
 EOM
 
 # Load the module
-line="RMLoad SystemVars"
-if ! $quiet ; then
-    echo "      - echo *** Load module" >> .robuild.yaml
-    echo "      - echo ***   $line" >> .robuild.yaml
-fi
-line="RMLoad SystemVarsDefaults32"
-if ! $quiet ; then
-    echo "      - echo *** Load module" >> .robuild.yaml
-    echo "      - echo ***   $line" >> .robuild.yaml
-fi
-echo "      - $line" >> .robuild.yaml
+for module in "${modules[@]}" ; do
+    line="RMLoad $module"
+    if ! $quiet ; then
+        echo "      - echo *** Load module '$module'" >> .robuild.yaml
+        echo "      - echo ***   $line" >> .robuild.yaml
+    fi
+    echo "      - $line" >> .robuild.yaml
+done
 
 # Run the necessary command
 for line in "${lines[@]}" ; do
+    if ! $quiet ; then
+        echo "      - echo *** Run test" >> .robuild.yaml
+        echo "      - echo ***   $line" >> .robuild.yaml
+    fi
     echo "      - $line" >> .robuild.yaml
 done
 
@@ -145,6 +157,7 @@ if $quiet ; then
 fi
 
 # Archive the files we want
+rm -f /tmp/testrun.zip
 zip -q9r /tmp/testrun.zip "${files[@]}" .robuild.yaml
 
 if [[ -t 0 ]] ; then

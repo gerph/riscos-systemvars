@@ -54,7 +54,15 @@ else
 TESTARGS = --test "${TEST}"
 endif
 
-tests: ${MODULE},ffa tests-sysvars.txt run-on-build-service.sh test.pl SystemVarsDefaults32,ffa
+ifeq (${GROUP},)
+else
+TESTARGS := ${TESTARGS} --group "${GROUP}"
+endif
+
+tests: ${MODULE},ffa \
+		tests-sysvars.txt \
+		run-on-build-service.sh test.pl \
+		SystemVarsDefaults32,ffa
 	./test.pl ${TESTARGS} --show-command --show-diff ./run-on-build-service.sh . < /dev/null
 
 build:

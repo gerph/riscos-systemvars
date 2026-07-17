@@ -61,6 +61,7 @@ Command: $TOOL --quiet $FILE --config sysvars.read_corrupts_buffer=increment $AR
 File: bin.var_read
 Expect: expect/var/read_$ARG1
 Replace: expect/var/replacements
+Disable: Not relevant outside Pyromaniac
 
 Test: Undefined variable
 Args: Undefined
@@ -70,7 +71,7 @@ Test: Sys$Time
 Args: Sys$Time
 
 Test: Wildcard enumeration
-Command: $TOOL --quiet --set-variable "This=1" --set-variable "That=2" --set-variable "TheOther=3" $FILE Th*
+Command: $TOOL --quiet --config sysvars.read_corrupts_buffer=increment --set-variable "This=1" --set-variable "That=2" --set-variable "TheOther=3" $FILE Th*
 Expect: expect/var/read_enumeration
 
 
