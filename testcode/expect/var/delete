@@ -3,4 +3,4 @@ Type:           0
 Length:         -1
 Delete
 ------
-Error: Variable 'My$Var' not found (Error number &124)
+Error: NoSuchVariable:System variable not found (Error number &124)

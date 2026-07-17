@@ -8,7 +8,7 @@ Type:           1
 Context:        My$Variable
 Value:          -9007
 ------ Expanding variable ------
-Length:         5
+Length:         10
 Type:           0
 Context:        My$Variable
-Value:          -9007
+Value:          4294958289

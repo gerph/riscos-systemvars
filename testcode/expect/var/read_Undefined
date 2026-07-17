@@ -1,4 +1,4 @@
 ReadVarValue:   Undefined
 ----
 Claims to not exist
-Error: Variable 'Undefined' not found (Error number &124)
+Error: NoSuchVariable:System variable not found (Error number &124)
